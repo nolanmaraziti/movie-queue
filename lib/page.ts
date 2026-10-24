@@ -7,8 +7,8 @@ export async function pageUser(): Promise<{ user: User | null; setupError?: stri
   try {
     return { user: await currentUser() };
   } catch (err) {
+    if (!(err instanceof DbError)) throw err;
     console.error(err);
-    if (err instanceof DbError) return { user: null, setupError: err.message };
-    throw err;
+    return { user: null, setupError: err.message };
   }
 }
