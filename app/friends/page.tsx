@@ -24,7 +24,11 @@ export default async function FriendsPage() {
       .map(async (p) => {
         const id = await userIdFor(p.username);
         const theirs = id ? await getQueue(id) : [];
-        return { username: p.username, count: theirs.length, common: theirs.filter((m) => myIds.has(m.id)).length };
+        return {
+          username: p.username,
+          movies: theirs.map((m) => ({ ...m, both: myIds.has(m.id) })),
+          common: theirs.filter((m) => myIds.has(m.id)).length,
+        };
       }),
   );
   const received = people.filter((p) => p.status === "received").map((p) => p.username);

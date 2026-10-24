@@ -1,13 +1,13 @@
 import type { Movie } from "@/lib/types";
 
 // The real TMDB poster when there is one, otherwise the colored tile from the prototype.
-export default function Poster({ movie, size }: { movie: Movie; size: "sm" | "md" }) {
+export default function Poster({ movie, size }: { movie: Movie; size: "xs" | "sm" | "md" }) {
   if (movie.posterPath) {
     return (
       // eslint-disable-next-line @next/next/no-img-element
       <img
         className={`poster img ${size}`}
-        src={`https://image.tmdb.org/t/p/${size === "sm" ? "w92" : "w185"}${movie.posterPath}`}
+        src={`https://image.tmdb.org/t/p/${size !== "md" ? "w92" : "w185"}${movie.posterPath}`}
         alt=""
         loading="lazy"
       />

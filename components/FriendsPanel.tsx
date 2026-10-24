@@ -4,8 +4,10 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import type { FriendStatus, Person } from "@/lib/friends";
+import type { Movie } from "@/lib/types";
+import Poster from "./Poster";
 
-type Friend = { username: string; count: number; common: number };
+type Friend = { username: string; movies: (Movie & { both: boolean })[]; common: number };
 type Props = { friends: Friend[]; received: string[]; sent: string[] };
 
 // Find people by username, answer friend requests, and see your friends.
@@ -115,25 +117,30 @@ export default function FriendsPanel({ friends, received, sent }: Props) {
         <div className="label">Friends</div>
         {friends.length === 0 && <div className="hint">No friends yet. Search for someone above and send a request.</div>}
         {friends.map((f) => (
-          <div className="res person" key={f.username}>
+          <div className="res person friend" key={f.username}>
             <Link className="t" href={`/u/${f.username}`}>
               <b>@{f.username}</b>
               <small>
-                {f.count} {f.count === 1 ? "movie" : "movies"} queued
+                {f.movies.length} {f.movies.length === 1 ? "movie" : "movies"}
                 {f.common > 0 && <> · <span className="common">{f.common} in common</span></>}
               </small>
             </Link>
-            <div className="actions">
-              <button
-                className="x"
-                aria-label={`Unfriend ${f.username}`}
-                disabled={busy === f.username}
-                onClick={() => confirm(`Unfriend @${f.username}?`) && act(f.username, "DELETE")}
-              >
-                ×
-              </button>
-              <Link className="add" href={`/u/${f.username}`}>View</Link>
-            </div>
+            {/* Their queue's posters in order, left to right. Ones on your queue too get an orange outline. */}
+            <Link className="strip" href={`/u/${f.username}`} aria-label={`See @${f.username}'s queue`}>
+              {f.movies.map((m) => (
+                <span key={m.id} className={m.both ? "both" : undefined} title={m.title}>
+                  <Poster movie={m} size="xs" />
+                </span>
+              ))}
+            </Link>
+            <button
+              className="x"
+              aria-label={`Unfriend ${f.username}`}
+              disabled={busy === f.username}
+              onClick={() => confirm(`Unfriend @${f.username}?`) && act(f.username, "DELETE")}
+            >
+              ×
+            </button>
           </div>
         ))}
       </section>
