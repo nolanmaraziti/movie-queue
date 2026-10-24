@@ -2,33 +2,48 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { Movie } from "@/lib/types";
-import { fmtRun, loadQueue, MAX, saveQueue } from "@/lib/queue";
+import { fmtRun, MAX } from "@/lib/queue";
+import Nav from "./Nav";
 import QueueList from "./QueueList";
 import SearchSheet from "./SearchSheet";
 import TmdbCredit from "./TmdbCredit";
 
-export default function MovieQueue() {
-  const [queue, setQueue] = useState<Movie[]>([]);
-  const [loaded, setLoaded] = useState(false);
+type Props = { username: string; initialQueue: Movie[]; pending: number };
+
+export default function MovieQueue({ username, initialQueue, pending }: Props) {
+  const [queue, setQueue] = useState<Movie[]>(initialQueue);
   const [sheetOpen, setSheetOpen] = useState(false);
   const [toastMsg, setToastMsg] = useState("");
   const toastTimer = useRef<ReturnType<typeof setTimeout>>(undefined);
   const fabRef = useRef<HTMLButtonElement>(null);
+  const saving = useRef<Promise<unknown>>(Promise.resolve());
 
-  // Save to this browser on every change.
-  function update(next: Movie[]) {
-    setQueue(next);
-    saveQueue(next);
+  // Save to your account on every change. Saves go out one at a time, in order,
+  // so a slow save can never overwrite a newer one.
+  function save(next: Movie[]) {
+    saving.current = saving.current.then(async () => {
+      try {
+        const res = await fetch("/api/queue", {
+          method: "PUT",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({ queue: next }),
+        });
+        if (res.status === 401) return window.location.reload();
+        if (!res.ok) throw new Error();
+      } catch {
+        toast("Couldn't save. Check your connection.");
+      }
+    });
   }
 
-  // Load the saved queue once the page is open in the browser.
-  useEffect(() => {
-    const saved = loadQueue();
-    setQueue(saved);
-    setLoaded(true);
+  function update(next: Movie[]) {
+    setQueue(next);
+    save(next);
+  }
 
+  useEffect(() => {
     // Fill in posters for TMDB movies saved without one (like the starter picks).
-    for (const m of saved) {
+    for (const m of initialQueue) {
       if (!m.tmdbId || m.posterPath !== undefined) continue;
       fetch(`/api/movie/${m.tmdbId}`)
         .then((r) => (r.ok ? r.json() : null))
@@ -36,7 +51,7 @@ export default function MovieQueue() {
           if (!data?.movie) return;
           setQueue((q) => {
             const next = q.map((x) => (x.id === m.id ? { ...x, ...data.movie } : x));
-            saveQueue(next);
+            save(next);
             return next;
           });
         })
@@ -94,12 +109,13 @@ export default function MovieQueue() {
             {Array.from({ length: MAX }, (_, i) => <i key={i} className={i < n ? "on" : ""} />)}
           </div>
           <div className="sub">
-            <span>{loaded && (left === 0 ? "Queue full" : `${left} ${left === 1 ? "slot" : "slots"} open`)}</span>
+            <span>{(left === 0 ? "Queue full" : `${left} ${left === 1 ? "slot" : "slots"} open`)}</span>
             <span>{total ? `${fmtRun(total)} of movies` : ""}</span>
           </div>
+          <Nav username={username} pending={pending} />
         </header>
         <main>
-          {loaded && n === 0 && (
+          {n === 0 && (
             <div className="empty">
               <strong>Nothing queued</strong>
               <span>Tap + to search for a movie and add it. You get ten slots.</span>

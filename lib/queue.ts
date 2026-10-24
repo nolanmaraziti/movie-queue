@@ -1,4 +1,4 @@
-// Saving the queue in this browser (localStorage), plus small display helpers.
+// The 10-movie limit, the queue that was saved in this browser before accounts, and small display helpers.
 import type { Movie } from "./types";
 
 export const MAX = 10;
@@ -6,23 +6,25 @@ const KEY = "movie-queue-v1";
 
 // First visit: start with a few example picks you can remove.
 // Their posters are filled in from TMDB after the page loads.
-const STARTERS: Movie[] = [
+export const STARTERS: Movie[] = [
   { id: "tmdb-496243", tmdbId: 496243, title: "Parasite", year: "2019", runtime: 133 },
   { id: "tmdb-329865", tmdbId: 329865, title: "Arrival", year: "2016", runtime: 116 },
   { id: "tmdb-120467", tmdbId: 120467, title: "The Grand Budapest Hotel", year: "2014", runtime: 100 },
 ];
 
-export function loadQueue(): Movie[] {
+// Before accounts, the queue lived only in this browser. When you sign up or log in,
+// it's sent along once to be added to your account, then cleared from the browser.
+export function loadLocalQueue(): Movie[] | null {
   try {
     const raw = localStorage.getItem(KEY);
     if (raw) return JSON.parse(raw);
   } catch {}
-  return STARTERS;
+  return null;
 }
 
-export function saveQueue(queue: Movie[]) {
+export function clearLocalQueue() {
   try {
-    localStorage.setItem(KEY, JSON.stringify(queue));
+    localStorage.removeItem(KEY);
   } catch {}
 }
 
