@@ -1,0 +1,15 @@
+# Installed packages and build output
+node_modules/
+.next/
+out/
+next-env.d.ts
+*.tsbuildinfo
+
+# Secret settings. Never commit your real .env.local file.
+.env
+.env*.local
+
+# Vercel and OS clutter
+.vercel
+.DS_Store
+npm-debug.log*
