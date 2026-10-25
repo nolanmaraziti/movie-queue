@@ -10,6 +10,7 @@ type Props = {
   label?: string;
   onMove: (from: number, to: number, announce: boolean) => void;
   onRemove: (id: string) => void;
+  onSpin?: () => void;
 };
 
 type Drag = { from: number; to: number; startY: number; rows: HTMLElement[]; row: HTMLElement; step: number; id: number };
@@ -22,7 +23,14 @@ const grip = (
   </svg>
 );
 
-export default function QueueList({ queue, label = "Your queue", onMove, onRemove }: Props) {
+const wheel = (
+  <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
+    <circle cx="10" cy="10" r="8" />
+    <path d="M10 2v16M2 10h16M4.3 4.3l11.4 11.4M15.7 4.3 4.3 15.7" strokeWidth="1.4" />
+  </svg>
+);
+
+export default function QueueList({ queue, label = "Your queue", onMove, onRemove, onSpin }: Props) {
   const listRef = useRef<HTMLOListElement>(null);
   const drag = useRef<Drag | null>(null);
   const focusAfter = useRef<number | null>(null);
@@ -97,7 +105,14 @@ export default function QueueList({ queue, label = "Your queue", onMove, onRemov
 
   return (
     <section style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-      <div className="label">{label}</div>
+      <div className="list-head">
+        <div className="label">{label}</div>
+        {onSpin && queue.length > 1 && (
+          <button className="spin" onClick={onSpin}>
+            {wheel} Spin the wheel
+          </button>
+        )}
+      </div>
       <ol
         ref={listRef}
         onPointerDown={onPointerDown}

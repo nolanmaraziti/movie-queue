@@ -7,12 +7,14 @@ import Nav from "./Nav";
 import QueueList from "./QueueList";
 import SearchSheet from "./SearchSheet";
 import TmdbCredit from "./TmdbCredit";
+import WheelSheet from "./WheelSheet";
 
 type Props = { username: string; initialQueue: Movie[]; counts: { pending: number; invites: number } };
 
 export default function MovieQueue({ username, initialQueue, counts }: Props) {
   const [queue, setQueue] = useState<Movie[]>(initialQueue);
   const [sheetOpen, setSheetOpen] = useState(false);
+  const [wheelOpen, setWheelOpen] = useState(false);
   const [toastMsg, setToastMsg] = useState("");
   const toastTimer = useRef<ReturnType<typeof setTimeout>>(undefined);
   const fabRef = useRef<HTMLButtonElement>(null);
@@ -88,6 +90,15 @@ export default function MovieQueue({ username, initialQueue, counts }: Props) {
     toast(next.length === MAX ? `Added “${m.title}”. Queue is full.` : `Added “${m.title}”`);
   }
 
+  // The wheel's "Make it up next" button: move that movie to the top of the queue.
+  function upNext(id: string) {
+    const i = queue.findIndex((x) => x.id === id);
+    if (i > 0) move(i, 0, true);
+    setWheelOpen(false);
+  }
+
+  const closeWheel = useCallback(() => setWheelOpen(false), []);
+
   const closeSheet = useCallback(() => {
     setSheetOpen(false);
     fabRef.current?.focus();
@@ -121,7 +132,7 @@ export default function MovieQueue({ username, initialQueue, counts }: Props) {
               <span>Tap + to search for a movie and add it. You get ten slots.</span>
             </div>
           )}
-          {n > 0 && <QueueList queue={queue} onMove={move} onRemove={remove} />}
+          {n > 0 && <QueueList queue={queue} onMove={move} onRemove={remove} onSpin={() => setWheelOpen(true)} />}
         </main>
         <TmdbCredit />
       </div>
@@ -136,6 +147,7 @@ export default function MovieQueue({ username, initialQueue, counts }: Props) {
       </button>
 
       {sheetOpen && <SearchSheet queue={queue} onAdd={add} onClose={closeSheet} />}
+      {wheelOpen && <WheelSheet queue={queue} onUpNext={upNext} onClose={closeWheel} />}
       {toastMsg && <div className="toast" role="status">{toastMsg}</div>}
     </>
   );

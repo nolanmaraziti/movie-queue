@@ -9,6 +9,7 @@ import Nav from "./Nav";
 import QueueList from "./QueueList";
 import SearchSheet from "./SearchSheet";
 import TmdbCredit from "./TmdbCredit";
+import WheelSheet from "./WheelSheet";
 
 type Props = {
   groupId: string;
@@ -28,6 +29,7 @@ export default function GroupQueue({ groupId, name, username, counts, initialQue
   const router = useRouter();
   const [queue, setQueue] = useState<Movie[]>(initialQueue);
   const [sheetOpen, setSheetOpen] = useState(false);
+  const [wheelOpen, setWheelOpen] = useState(false);
   const [toastMsg, setToastMsg] = useState("");
   const [busy, setBusy] = useState("");
   const toastTimer = useRef<ReturnType<typeof setTimeout>>(undefined);
@@ -143,6 +145,15 @@ export default function GroupQueue({ groupId, name, username, counts, initialQue
     if (confirm(ask) && (await act("leave", base, "DELETE"))) router.push("/groups");
   }
 
+  // The wheel's "Make it up next" button: move that movie to the top of the queue.
+  function upNext(id: string) {
+    const i = queue.findIndex((x) => x.id === id);
+    if (i > 0) move(i, 0, true);
+    setWheelOpen(false);
+  }
+
+  const closeWheel = useCallback(() => setWheelOpen(false), []);
+
   const closeSheet = useCallback(() => {
     setSheetOpen(false);
     fabRef.current?.focus();
@@ -178,7 +189,7 @@ export default function GroupQueue({ groupId, name, username, counts, initialQue
               <span>Tap + to add a movie. Everyone in the group shares these ten slots.</span>
             </div>
           )}
-          {n > 0 && <QueueList queue={queue} label="Group queue" onMove={move} onRemove={remove} />}
+          {n > 0 && <QueueList queue={queue} label="Group queue" onMove={move} onRemove={remove} onSpin={() => setWheelOpen(true)} />}
 
           <section>
             <div className="label">In this group</div>
@@ -224,6 +235,7 @@ export default function GroupQueue({ groupId, name, username, counts, initialQue
       </button>
 
       {sheetOpen && <SearchSheet queue={queue} onAdd={add} onClose={closeSheet} />}
+      {wheelOpen && <WheelSheet queue={queue} onUpNext={upNext} onClose={closeWheel} />}
       {toastMsg && <div className="toast" role="status">{toastMsg}</div>}
     </>
   );
