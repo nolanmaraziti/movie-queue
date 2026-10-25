@@ -50,6 +50,23 @@ const SCHEMA = `
   CREATE INDEX IF NOT EXISTS friendships_to_idx ON friendships (to_id);
   -- Stops two requests between the same two people (one each way) from both being saved.
   CREATE UNIQUE INDEX IF NOT EXISTS friendships_pair_idx ON friendships (LEAST(from_id, to_id), GREATEST(from_id, to_id));
+  -- Group queues: a named queue shared by a few friends.
+  CREATE TABLE IF NOT EXISTS group_queues (
+    id BIGSERIAL PRIMARY KEY,
+    name TEXT NOT NULL,
+    queue JSONB NOT NULL DEFAULT '[]',
+    created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+  );
+  -- Who's in each group. status is 'invited' until they accept, then 'joined'.
+  CREATE TABLE IF NOT EXISTS group_members (
+    group_id BIGINT NOT NULL REFERENCES group_queues(id) ON DELETE CASCADE,
+    user_id BIGINT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    status TEXT NOT NULL CHECK (status IN ('invited', 'joined')),
+    invited_by BIGINT REFERENCES users(id) ON DELETE SET NULL,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+    PRIMARY KEY (group_id, user_id)
+  );
+  CREATE INDEX IF NOT EXISTS group_members_user_idx ON group_members (user_id);
 `;
 
 function ready() {
@@ -64,4 +81,24 @@ export async function sql<T = Record<string, unknown>>(text: string, params: unk
   await ready();
   const res = await pool().query(text, params);
   return res.rows as T[];
+}
+
+// Runs several queries as one step. Nothing is saved unless they all work, and rows
+// read with "FOR UPDATE" stay locked until the step finishes, so changes take turns.
+export async function transaction<T>(run: (q: typeof sql) => Promise<T>): Promise<T> {
+  await ready();
+  const client = await pool().connect();
+  const q = async <R = Record<string, unknown>>(text: string, params: unknown[] = []) =>
+    (await client.query(text, params)).rows as R[];
+  try {
+    await client.query("BEGIN");
+    const result = await run(q);
+    await client.query("COMMIT");
+    return result;
+  } catch (err) {
+    await client.query("ROLLBACK").catch(() => {});
+    throw err;
+  } finally {
+    client.release();
+  }
 }

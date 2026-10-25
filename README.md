@@ -4,6 +4,8 @@ Your next ten movies, in order. Search any movie on The Movie Database (TMDB), a
 
 Log in with a username and password and your queue is saved to your account, so it follows you to any device. Search for other people by username and send friend requests. Once they accept, you can see each other's queues, and movies you both have are tagged "You both".
 
+Group queues are shared queues for you and your friends. On the Groups tab, give one a name, then invite friends. Once they join, everyone in the group can add, move and remove movies, and each movie shows who added it. A group queue has ten slots too.
+
 ## How it fits together
 
 ```
@@ -11,6 +13,8 @@ app/
   page.tsx              the main screen (or the log in screen if you're signed out)
   friends/page.tsx      find people, friend requests, your friends
   u/[username]/page.tsx a friend's queue, with "You both" tags
+  groups/page.tsx       start a group queue, answer invites, your groups
+  groups/[id]/page.tsx  one group queue (members only)
   layout.tsx            page title and fonts
   globals.css           all the colors and styles
   api/search/route.ts   server only: searches TMDB with your secret token
@@ -19,11 +23,15 @@ app/
   api/queue/            saves your queue to your account
   api/users/search/     finds people by username
   api/friends/          send, accept, decline and remove friends
+  api/groups/           make groups, invite, join, leave, and change a group's queue
 components/
   MovieQueue.tsx        header, queue, + button, and messages
   AuthForm.tsx          the log in / sign up form
-  Nav.tsx               My queue / Friends / Log out row
+  Nav.tsx               My queue / Groups / Friends / Log out row
   FriendsPanel.tsx      the search box and lists on the Friends page
+  GroupsPanel.tsx       the new-group box, invites and group list on the Groups page
+  GroupQueue.tsx        a group's queue, members and invite buttons
+  JoinButton.tsx        "Join group" on a group you're invited to
   QueueList.tsx         the numbered list, drag to reorder, remove (×)
   SearchSheet.tsx       the "Add a movie" search panel
   Poster.tsx            TMDB poster, or a colored tile if there isn't one
@@ -33,6 +41,7 @@ lib/
   db.ts                 connects to the database and creates the tables (server only)
   auth.ts               password hashing and staying signed in (server only)
   friends.ts            friend requests (server only)
+  groups.ts             group queues, members and invites (server only)
   serverQueue.ts        reading and saving queues in the database (server only)
   queue.ts              the 10-movie limit, and the old browser-saved queue
 .env.example            template for your secret settings

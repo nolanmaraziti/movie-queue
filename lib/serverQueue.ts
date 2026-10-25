@@ -27,6 +27,7 @@ export function cleanQueue(input: unknown): Movie[] {
     if (m.posterPath === null || (typeof m.posterPath === "string" && /^\/[\w.-]{1,100}$/.test(m.posterPath))) {
       movie.posterPath = m.posterPath;
     }
+    if (typeof m.addedBy === "string" && /^[a-z0-9_.]{3,20}$/.test(m.addedBy)) movie.addedBy = m.addedBy;
     out.push(movie);
   }
   return out;

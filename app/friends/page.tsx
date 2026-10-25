@@ -4,7 +4,7 @@ import Nav from "@/components/Nav";
 import SetupNeeded from "@/components/SetupNeeded";
 import TmdbCredit from "@/components/TmdbCredit";
 import { listPeople, userIdFor } from "@/lib/friends";
-import { pageUser } from "@/lib/page";
+import { navCounts, pageUser } from "@/lib/page";
 import { getQueue } from "@/lib/serverQueue";
 
 export const metadata = { title: "Friends · Movie Queue" };
@@ -14,7 +14,7 @@ export default async function FriendsPage() {
   if (setupError) return <SetupNeeded message={setupError} />;
   if (!user) redirect("/");
 
-  const [people, mine] = await Promise.all([listPeople(user.id), getQueue(user.id)]);
+  const [people, mine, counts] = await Promise.all([listPeople(user.id), getQueue(user.id), navCounts(user.id)]);
   const myIds = new Set(mine.map((m) => m.id));
 
   // For each friend: how many movies are on both your queues.
@@ -41,7 +41,7 @@ export default async function FriendsPage() {
           <h1>Your<br />Friends</h1>
           <div className="count">{friends.length}</div>
         </div>
-        <Nav username={user.username} pending={received.length} />
+        <Nav username={user.username} {...counts} />
       </header>
       <main>
         <FriendsPanel friends={friends} received={received} sent={sent} />

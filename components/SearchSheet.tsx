@@ -82,7 +82,7 @@ export default function SearchSheet({ queue, onAdd, onClose }: Props) {
             <h3 id="sheetTitle">Add a movie</h3>
             <button className="close" onClick={onClose}>Done</button>
           </div>
-          {full && <div className="full">Your queue is full. Remove a movie to make room for a new one.</div>}
+          {full && <div className="full">This queue is full. Remove a movie to make room for a new one.</div>}
           <input
             ref={inputRef}
             id="q"

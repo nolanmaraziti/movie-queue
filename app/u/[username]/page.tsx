@@ -5,8 +5,8 @@ import Poster from "@/components/Poster";
 import SetupNeeded from "@/components/SetupNeeded";
 import TmdbCredit from "@/components/TmdbCredit";
 import { cleanUsername } from "@/lib/auth";
-import { pendingCount, statusWith, userIdFor } from "@/lib/friends";
-import { pageUser } from "@/lib/page";
+import { statusWith, userIdFor } from "@/lib/friends";
+import { navCounts, pageUser } from "@/lib/page";
 import { fmtRun, MAX } from "@/lib/queue";
 import { getQueue } from "@/lib/serverQueue";
 
@@ -29,7 +29,7 @@ export default async function FriendQueue({ params }: Params) {
   const theirId = await userIdFor(username);
   if (!theirId) notFound();
 
-  const [status, pending] = await Promise.all([statusWith(user.id, theirId), pendingCount(user.id)]);
+  const [status, counts] = await Promise.all([statusWith(user.id, theirId), navCounts(user.id)]);
   const header = (count?: number, note?: string) => (
     <header>
       <div className="top">
@@ -42,7 +42,7 @@ export default async function FriendQueue({ params }: Params) {
         </div>
       )}
       {note && <div className="sub"><span>{note}</span></div>}
-      <Nav username={user.username} pending={pending} />
+      <Nav username={user.username} {...counts} />
     </header>
   );
 

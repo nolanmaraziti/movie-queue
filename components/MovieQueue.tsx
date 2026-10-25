@@ -8,9 +8,9 @@ import QueueList from "./QueueList";
 import SearchSheet from "./SearchSheet";
 import TmdbCredit from "./TmdbCredit";
 
-type Props = { username: string; initialQueue: Movie[]; pending: number };
+type Props = { username: string; initialQueue: Movie[]; counts: { pending: number; invites: number } };
 
-export default function MovieQueue({ username, initialQueue, pending }: Props) {
+export default function MovieQueue({ username, initialQueue, counts }: Props) {
   const [queue, setQueue] = useState<Movie[]>(initialQueue);
   const [sheetOpen, setSheetOpen] = useState(false);
   const [toastMsg, setToastMsg] = useState("");
@@ -112,7 +112,7 @@ export default function MovieQueue({ username, initialQueue, pending }: Props) {
             <span>{(left === 0 ? "Queue full" : `${left} ${left === 1 ? "slot" : "slots"} open`)}</span>
             <span>{total ? `${fmtRun(total)} of movies` : ""}</span>
           </div>
-          <Nav username={username} pending={pending} />
+          <Nav username={username} {...counts} />
         </header>
         <main>
           {n === 0 && (

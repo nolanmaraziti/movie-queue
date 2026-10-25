@@ -6,4 +6,5 @@ export type Movie = {
   year: string; // "" when unknown
   runtime: number; // minutes, 0 when unknown
   posterPath?: string | null; // TMDB poster file, e.g. "/abc123.jpg"
+  addedBy?: string; // group queues only: the username of whoever added it
 };
