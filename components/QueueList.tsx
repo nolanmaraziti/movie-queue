@@ -7,6 +7,7 @@ import Poster from "./Poster";
 
 type Props = {
   queue: Movie[];
+  label?: string;
   onMove: (from: number, to: number, announce: boolean) => void;
   onRemove: (id: string) => void;
 };
@@ -21,7 +22,7 @@ const grip = (
   </svg>
 );
 
-export default function QueueList({ queue, onMove, onRemove }: Props) {
+export default function QueueList({ queue, label = "Your queue", onMove, onRemove }: Props) {
   const listRef = useRef<HTMLOListElement>(null);
   const drag = useRef<Drag | null>(null);
   const focusAfter = useRef<number | null>(null);
@@ -96,7 +97,7 @@ export default function QueueList({ queue, onMove, onRemove }: Props) {
 
   return (
     <section style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-      <div className="label">Your queue</div>
+      <div className="label">{label}</div>
       <ol
         ref={listRef}
         onPointerDown={onPointerDown}
@@ -115,7 +116,7 @@ export default function QueueList({ queue, onMove, onRemove }: Props) {
             <div className="t">
               {i === 0 && <span className="chip">Up next</span>}
               <b>{m.title}</b>
-              <small>{[m.year, fmtRun(m.runtime)].filter(Boolean).join(" · ")}</small>
+              <small>{[m.year, fmtRun(m.runtime), m.addedBy && `added by @${m.addedBy}`].filter(Boolean).join(" · ")}</small>
             </div>
             <button className="x" onClick={() => onRemove(m.id)} aria-label={`Remove ${m.title}`}>
               ×
