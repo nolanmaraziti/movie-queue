@@ -12,6 +12,7 @@ import SetupNeeded from "@/components/SetupNeeded";
 import TabBar from "@/components/TabBar";
 import TmdbCredit from "@/components/TmdbCredit";
 import { cleanUsername } from "@/lib/auth";
+import { getPic } from "@/lib/avatars";
 import { friendsSince, statusWith, userIdFor } from "@/lib/friends";
 import { groupsInCommon } from "@/lib/groups";
 import { nightsInCommon } from "@/lib/nights";
@@ -39,7 +40,7 @@ export default async function FriendProfile({ params }: Params) {
   const theirId = await userIdFor(username);
   if (!theirId) notFound();
 
-  const [status, counts] = await Promise.all([statusWith(user.id, theirId), navCounts(user.id)]);
+  const [status, counts, pic] = await Promise.all([statusWith(user.id, theirId), navCounts(user.id), getPic(username)]);
   const friends = status === "friends";
   const [theirs, mine, since, groups, nights] = friends
     ? await Promise.all([
@@ -58,7 +59,13 @@ export default async function FriendProfile({ params }: Params) {
           <Link className="round" href="/friends" aria-label="Back to friends"><BackIcon /></Link>
         </div>
         <section className="profile-head">
-          <Avatar username={username} size={96} />
+          {pic ? (
+            <Link className="pic-link" href={`/movie/${pic.tmdbId}`} aria-label={`@${username}'s picture is from ${pic.title || "a movie"}. See the movie`}>
+              <Avatar username={username} size={96} pic={pic} />
+            </Link>
+          ) : (
+            <Avatar username={username} size={96} pic={null} />
+          )}
           <h1>@{username}</h1>
           {sinceText && <span className="tip">{sinceText}</span>}
           <div className="profile-actions">

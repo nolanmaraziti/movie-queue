@@ -489,3 +489,40 @@ a{color:var(--accent)}
 .movie-actions{position:fixed;left:0;right:0;bottom:0;z-index:25;background:linear-gradient(180deg,transparent,var(--bg) 30%);padding:24px max(16px, env(safe-area-inset-right, 0px)) calc(14px + env(safe-area-inset-bottom, 0px)) max(16px, env(safe-area-inset-left, 0px))}
 .movie-actions>*{max-width:560px;margin:0 auto}
 .swcard div.poster span{display:none}
+
+/* ---------- Poster profile pictures ---------- */
+.avatar.pic{overflow:hidden;position:relative}
+.avatar.pic svg{display:block}
+.pic-edit{position:relative;display:inline-block;border-radius:50%}
+.pic-edit .cam{position:absolute;right:-2px;bottom:-2px;width:32px;height:32px;border-radius:50%;background:var(--accent);color:var(--accent-ink);display:grid;place-items:center;border:3px solid var(--bg)}
+.pic-link{border-radius:50%;display:inline-block}
+.pic-from{font-size:13px;color:var(--muted)}
+.picmaker{display:flex;flex-direction:column;gap:20px;padding-bottom:40px}
+.picmaker .step{display:flex;flex-direction:column;gap:10px}
+.picmaker .from-queue{display:flex;gap:8px;overflow-x:auto;padding:2px 2px 4px}
+.ptiles{display:flex;gap:8px;overflow-x:auto;padding:4px 2px}
+.ptiles button{flex:none;padding:0;border:0;background:none;border-radius:6px;cursor:pointer;display:flex;flex-direction:column;gap:4px;align-items:flex-start;width:56px;color:var(--ink);font:inherit;text-align:left}
+.ptiles button img,.ptiles button .poster{width:56px;height:84px;border-radius:6px;object-fit:cover;display:block}
+.ptiles button[aria-pressed="true"] img,.ptiles button[aria-pressed="true"] .poster{box-shadow:0 0 0 2px var(--bg),0 0 0 4px var(--accent)}
+.ptiles button small{font-size:11px;line-height:1.2;color:var(--muted);display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.ptiles .note{align-self:center;font-size:12px;color:var(--muted);line-height:1.3;flex:none;max-width:120px}
+.stage{position:relative;align-self:center;width:min(100%,260px);aspect-ratio:2/3;border-radius:14px;overflow:hidden;background:var(--surface);touch-action:none;user-select:none;-webkit-user-select:none}
+.stage>img{width:100%;height:100%;display:block;pointer-events:none}
+.stage .shade{position:absolute;inset:0;pointer-events:none}
+.stage .cutter{position:absolute;cursor:grab;outline:none}
+.stage .cutter:active{cursor:grabbing}
+.stage .cutter svg{width:100%;height:100%;display:block;overflow:visible}
+.stage .cutter:focus-visible svg path{stroke-width:2.4}
+.stage .tip{position:absolute;left:50%;bottom:10px;transform:translateX(-50%);font-size:12px;font-weight:600;background:rgba(0,0,0,.6);border-radius:12px;padding:5px 10px;white-space:nowrap;pointer-events:none}
+.zoom{display:flex;align-items:center;gap:10px;font-size:13px;color:var(--muted)}
+.zoom input{flex:1;accent-color:var(--accent)}
+.shapes{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:8px}
+.shapes button{height:64px;border-radius:12px;border:1px solid var(--line);background:var(--surface);color:var(--muted);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;font:inherit;font-size:12px;font-weight:600;cursor:pointer}
+.shapes button[aria-pressed="true"]{border:2px solid var(--accent);background:#24303b;color:var(--ink)}
+.swatches{display:flex;gap:10px;flex-wrap:wrap}
+.swatches button{width:38px;height:38px;border-radius:50%;border:0;padding:0;cursor:pointer;box-shadow:inset 0 0 0 1px rgba(255,255,255,.15)}
+.swatches button[aria-pressed="true"]{box-shadow:0 0 0 2px var(--bg),0 0 0 4px #fff}
+.pic-preview{display:flex;align-items:center;gap:16px;background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:14px}
+.pic-preview>div{display:flex;flex-direction:column;gap:4px}
+.pic-preview small{color:var(--muted);font-size:13px;line-height:1.4}
+.formbar .right{justify-self:end}
