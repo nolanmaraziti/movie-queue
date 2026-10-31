@@ -135,12 +135,12 @@ export default function NightView(p: Props) {
         )}
 
         <header className={`night-hero ${night.kind}`}>
+          {night.movie && <Poster movie={night.movie} size="md" />}
           <div>
             <span className="kind">{kindLabel(night.kind)}</span>
             <h1>{night.title}</h1>
             {night.note && <span className="note">{night.note}</span>}
           </div>
-          {night.movie && <Poster movie={night.movie} size="md" />}
         </header>
 
         <section className="facts">
