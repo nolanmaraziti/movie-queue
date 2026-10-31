@@ -6,6 +6,7 @@ import { sql } from "@/lib/db";
 import { cleanGroupId, getGroup, membership } from "@/lib/groups";
 import { cleanText, createNight, type Kind, type PickMode } from "@/lib/nights";
 import { getQueue } from "@/lib/serverQueue";
+import { getMovie } from "@/lib/tmdb";
 import { validTimeZone } from "@/lib/when";
 
 const list = (raw: unknown) => (Array.isArray(raw) ? raw.slice(0, 100) : []);
@@ -14,7 +15,12 @@ export function POST(request: Request) {
   return signedIn(async (me) => {
     const b = await readJson(request);
     const kind: Kind = b.kind === "theater" ? "theater" : "home";
-    const pickMode: PickMode = b.pickMode === "upnext" || b.pickMode === "spin" ? b.pickMode : "vote";
+    let pickMode: PickMode = b.pickMode === "upnext" || b.pickMode === "spin" ? b.pickMode : "vote";
+    // A movie chosen ahead of time (from a match or a movie's profile).
+    const tmdbId = typeof b.tmdbId === "number" && Number.isInteger(b.tmdbId) && b.tmdbId > 0 ? b.tmdbId : null;
+    const chosen = tmdbId ? await getMovie(tmdbId).catch(() => null) : null;
+    if (tmdbId && !chosen) return fail("Couldn't look up that movie. Try again.");
+    if (chosen) pickMode = "upnext";
     const title = cleanText(b.title, 80);
     if (!title) return fail("Give your night a name.");
     const startsAt = new Date(typeof b.startsAt === "string" ? b.startsAt : "");
@@ -26,7 +32,7 @@ export function POST(request: Request) {
     let groupId = typeof b.groupId === "string" ? cleanGroupId(b.groupId) : null;
     if (groupId && (await membership(groupId, me.id)) !== "joined") groupId = null;
     const source = groupId ? (await getGroup(groupId))?.queue ?? [] : await getQueue(me.id);
-    if (pickMode !== "spin" && source.length === 0) {
+    if (!chosen && pickMode !== "spin" && source.length === 0) {
       return fail(groupId ? "That group's queue is empty. Add a movie to it first." : "Your queue is empty. Add a movie first.");
     }
 
@@ -54,8 +60,8 @@ export function POST(request: Request) {
       address: cleanText(b.address, 200),
       groupId,
       pickMode,
-      options: pickMode === "vote" ? source.slice(0, 3) : [],
-      movie: pickMode === "upnext" ? source[0] : null,
+      options: !chosen && pickMode === "vote" ? source.slice(0, 3) : [],
+      movie: chosen ?? (pickMode === "upnext" ? source[0] : null),
       invite: invite.map((r) => r.id),
     });
     return Response.json({ token });

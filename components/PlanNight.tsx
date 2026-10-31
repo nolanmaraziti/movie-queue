@@ -4,9 +4,10 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import type { Movie } from "@/lib/types";
+import Poster from "./Poster";
 
 type Group = { id: string; name: string; queue: Movie[]; others: string[] };
-type Props = { myQueue: Movie[]; groups: Group[]; friends: string[]; startFriend?: string; startGroup?: string };
+type Props = { myQueue: Movie[]; groups: Group[]; friends: string[]; startFriend?: string; startGroup?: string; preset?: Movie | null };
 type Kind = "home" | "theater";
 type Pick = "vote" | "upnext" | "spin";
 
@@ -14,10 +15,10 @@ const pad = (n: number) => String(n).padStart(2, "0");
 const ymd = (d: Date) => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
 
 // "Plan a movie night": what kind, what to call it, how to pick the movie, when, where, and who to invite.
-export default function PlanNight({ myQueue, groups, friends, startFriend, startGroup }: Props) {
+export default function PlanNight({ myQueue, groups, friends, startFriend, startGroup, preset }: Props) {
   const router = useRouter();
   const [kind, setKind] = useState<Kind>("home");
-  const [title, setTitle] = useState("");
+  const [title, setTitle] = useState(preset ? `${preset.title} night` : "");
   const [source, setSource] = useState(startGroup ?? "");
   const [pick, setPick] = useState<Pick>("vote");
   const [date, setDate] = useState("");
@@ -27,6 +28,7 @@ export default function PlanNight({ myQueue, groups, friends, startFriend, start
   const [note, setNote] = useState("");
   const [inviteGroups, setInviteGroups] = useState<string[]>(startGroup ? [startGroup] : []);
   const [inviteFriends, setInviteFriends] = useState<string[]>(startFriend ? [startFriend] : []);
+  const [chosen, setChosen] = useState<Movie | null>(preset ?? null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
 
@@ -64,6 +66,7 @@ export default function PlanNight({ myQueue, groups, friends, startFriend, start
           tz: Intl.DateTimeFormat().resolvedOptions().timeZone,
           groupId: source || null,
           pickMode: pick,
+          tmdbId: chosen?.tmdbId ?? null,
           friends: inviteFriends,
           groups: inviteGroups,
         }),
@@ -113,7 +116,14 @@ export default function PlanNight({ myQueue, groups, friends, startFriend, start
 
         <fieldset>
           <legend className="label">Which movie?</legend>
-          {groups.length > 0 && (
+          {chosen && (
+            <div className="picked">
+              <Poster movie={chosen} size="sm" />
+              <span className="t"><b>{chosen.title}</b><small>{chosen.year}</small></span>
+              <button type="button" className="link plain" onClick={() => setChosen(null)}>Change</button>
+            </div>
+          )}
+          {!chosen && groups.length > 0 && (
             <label className="inline">
               <span>Choose from</span>
               <select className="field" value={source} onChange={(e) => chooseSource(e.target.value)}>
@@ -122,7 +132,7 @@ export default function PlanNight({ myQueue, groups, friends, startFriend, start
               </select>
             </label>
           )}
-          <div className="picks">
+          {!chosen && <div className="picks">
             <label>
               <span><b>Let guests vote</b><small>{queue.length ? `Top ${Math.min(3, queue.length)}: ${top3}` : "The queue is empty"}</small></span>
               <input type="radio" name="pick" checked={pick === "vote"} onChange={() => setPick("vote")} />
@@ -135,7 +145,7 @@ export default function PlanNight({ myQueue, groups, friends, startFriend, start
               <span><b>Spin the wheel on the night</b><small>A surprise from {sourceName === "your" ? "your" : sourceName} queue</small></span>
               <input type="radio" name="pick" checked={pick === "spin"} onChange={() => setPick("spin")} />
             </label>
-          </div>
+          </div>}
         </fieldset>
 
         <div className="two">

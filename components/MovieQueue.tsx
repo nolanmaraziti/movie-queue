@@ -175,6 +175,7 @@ export default function MovieQueue({ username, pending, nightCount, nightInvites
         <div className="actions-row">
           <Link className="pill" href="/nights/new">Plan a night</Link>
           {n > 1 && <button className="pill ghost" onClick={() => setWheelOpen(true)}>Spin</button>}
+          <Link className="pill outline-hot" href="/pick">Help me pick</Link>
         </div>
 
         <main className="home">
