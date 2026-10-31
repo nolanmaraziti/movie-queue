@@ -54,6 +54,14 @@ export async function getMovie(id: number): Promise<Movie> {
   return toMovie(await tmdb<TmdbMovie>(`/movie/${id}`));
 }
 
+// Every poster TMDB has for a movie (English and textless ones first), for making a profile picture.
+export async function getPosters(id: number): Promise<string[]> {
+  const d = await tmdb<{ posters?: { file_path: string; iso_639_1: string | null }[] }>(`/movie/${id}/images`, {
+    include_image_language: "en,null",
+  });
+  return (d.posters ?? []).slice(0, 30).map((p) => p.file_path);
+}
+
 // Search results from TMDB don't include runtimes, so we look up the details
 // of the top matches too (all at once, in parallel).
 export async function searchMovies(query: string, limit = 10): Promise<Movie[]> {

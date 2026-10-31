@@ -22,6 +22,7 @@ app/
   u/[username]/page.tsx someone's profile: their queue, groups in common, or Add friend
   profile/page.tsx      the Profile tab: your numbers, up next, your groups, log out
   pick/page.tsx         "Help me pick": the questions
+  profile/picture/      make your profile picture from a movie poster
   pick/[token]/page.tsx swiping on a deck of movies, alone or with friends
   movie/[id]/page.tsx   a movie's profile
   nights/page.tsx       the Nights tab: upcoming, invites waiting on you, and past nights
@@ -36,6 +37,8 @@ app/
   api/auth/             sign up, log in, log out
   api/queue/            saves your queue to your account, or adds one movie to it
   api/search/people/    server only: searches TMDB for actors and filmmakers
+  api/profile/picture/  save or remove your profile picture
+  api/avatars/          profile pictures for a few usernames at once
   api/pick/             build a deck from your answers; save swipes and find matches
   api/nights/           plan a night; answer, vote, pick the movie, write on the wall, cancel
   api/users/search/     finds people by username
@@ -57,6 +60,7 @@ components/
   NightRow.tsx          one night in a list, with its date block
   NightInviteCard.tsx   the "You're invited" card with Going / Maybe / Can't go
   RsvpButtons.tsx       Going / Maybe / Can't go
+  PictureMaker.tsx      pick a poster, line up the cutter, choose a shape and color
   PickQuestions.tsx     the "Help me pick" questions, one at a time
   SwipeDeck.tsx         the card stack, swiping, and the "It's a match" screen
   MovieActions.tsx      the buttons along the bottom of a movie's profile
@@ -77,6 +81,8 @@ lib/
   groups.ts             group queues, members and invites (server only)
   nights.ts             movie nights, RSVPs, votes and the wall (server only)
   when.ts               shows a night's date and time in the host's time zone
+  avatar.ts             profile picture shapes, colors, and checks (only these settings are saved;
+                        the poster always loads from TMDB, nothing is uploaded or copied)
   questions.ts          the "Help me pick" questions and what each answer means
   pick.ts               turns answers into a deck of movies, and runs swipe rounds (server only)
   serverQueue.ts        reading and saving queues in the database (server only)

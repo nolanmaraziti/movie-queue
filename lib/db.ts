@@ -70,6 +70,7 @@ const SCHEMA = `
   -- When a queue last changed (Friends lists recently changed queues first), and when a friendship began.
   ALTER TABLE users ADD COLUMN IF NOT EXISTS queue_updated_at TIMESTAMPTZ;
   ALTER TABLE friendships ADD COLUMN IF NOT EXISTS accepted_at TIMESTAMPTZ;
+  ALTER TABLE users ADD COLUMN IF NOT EXISTS avatar JSONB;
   -- Movie nights. token is the random part of the invite link (/n/token).
   -- tz is the host's time zone, so times show the way the host typed them.
   CREATE TABLE IF NOT EXISTS nights (
