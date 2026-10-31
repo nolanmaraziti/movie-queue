@@ -4,7 +4,8 @@
 import "server-only";
 import type { Movie } from "./types";
 
-const API = "https://api.themoviedb.org/3";
+// TMDB_API_BASE is only for testing against a stand-in server; normally it is unset.
+const API = process.env.TMDB_API_BASE?.trim() || "https://api.themoviedb.org/3";
 const CACHE_SECONDS = 60 * 60 * 24; // reuse TMDB answers for a day
 
 export class TmdbError extends Error {}
@@ -82,4 +83,91 @@ export async function searchPeople(query: string, limit = 6): Promise<CastCrew[]
       movies: (p.known_for ?? []).filter((m) => m.media_type === "movie" && m.title).map(toMovie),
     }))
     .filter((p) => p.movies.length > 0);
+}
+
+// Movie genres on TMDB, by id.
+export const GENRES: Record<number, string> = {
+  28: "Action", 12: "Adventure", 16: "Animation", 35: "Comedy", 80: "Crime", 99: "Documentary", 18: "Drama",
+  10751: "Family", 14: "Fantasy", 36: "History", 27: "Horror", 10402: "Music", 9648: "Mystery", 10749: "Romance",
+  878: "Sci-fi", 53: "Thriller", 10752: "War", 37: "Western",
+};
+
+export type Found = {
+  id: number;
+  title: string;
+  release_date?: string;
+  poster_path?: string | null;
+  backdrop_path?: string | null;
+  genre_ids?: number[];
+  vote_average?: number;
+  vote_count?: number;
+  original_language?: string;
+  overview?: string;
+};
+
+// TMDB's "discover": movies that match filters like genre, years, length and rating.
+export async function discover(params: Record<string, string>): Promise<Found[]> {
+  const data = await tmdb<{ results: Found[] }>("/discover/movie", { include_adult: "false", include_video: "false", ...params });
+  return data.results ?? [];
+}
+
+export type Details = {
+  movie: Movie;
+  overview: string;
+  genres: string[];
+  genreIds: number[];
+  backdrop: string | null;
+  stills: string[];
+  rating: number;
+  votes: number;
+  language: string;
+  certification: string;
+  director: string;
+  directorId: number | null;
+  cast: string[];
+  providers: { name: string; logo: string | null }[];
+  providerLink: string | null;
+};
+
+type RawDetails = TmdbMovie & {
+  overview?: string;
+  genres?: { id: number; name: string }[];
+  backdrop_path?: string | null;
+  vote_average?: number;
+  vote_count?: number;
+  original_language?: string;
+  spoken_languages?: { english_name?: string; iso_639_1: string }[];
+  credits?: { cast?: { name: string }[]; crew?: { id: number; name: string; job: string }[] };
+  release_dates?: { results?: { iso_3166_1: string; release_dates: { certification: string }[] }[] };
+  images?: { backdrops?: { file_path: string }[] };
+  "watch/providers"?: { results?: Record<string, { link?: string; flatrate?: { provider_name: string; logo_path?: string }[] }> };
+};
+
+// Everything for a movie's profile: credits, rating, pictures, and where to stream it (US).
+export async function getDetails(id: number): Promise<Details> {
+  const d = await tmdb<RawDetails>(`/movie/${id}`, {
+    append_to_response: "credits,release_dates,images,watch/providers",
+    include_image_language: "null,en",
+  });
+  const director = d.credits?.crew?.find((c) => c.job === "Director");
+  const us = d.release_dates?.results?.find((r) => r.iso_3166_1 === "US");
+  const watch = d["watch/providers"]?.results?.US;
+  const lang = d.spoken_languages?.find((l) => l.iso_639_1 === d.original_language);
+  return {
+    movie: toMovie(d),
+    overview: d.overview ?? "",
+    genres: (d.genres ?? []).map((g) => GENRES[g.id] ?? g.name),
+    genreIds: (d.genres ?? []).map((g) => g.id),
+    backdrop: d.backdrop_path ?? null,
+    stills: (d.images?.backdrops ?? []).slice(0, 5).map((b) => b.file_path),
+    rating: d.vote_average ?? 0,
+    votes: d.vote_count ?? 0,
+    language: lang?.english_name ?? d.original_language ?? "",
+    certification: us?.release_dates.find((r) => r.certification)?.certification ?? "",
+    director: director?.name ?? "",
+    directorId: director?.id ?? null,
+    cast: (d.credits?.cast ?? []).slice(0, 4).map((c) => c.name),
+    providers: (watch?.flatrate ?? []).slice(0, 6).map((p) => ({ name: p.provider_name, logo: p.logo_path ?? null })),
+    providerLink: watch?.link ?? null,
+  };
 }

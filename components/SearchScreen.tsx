@@ -165,10 +165,17 @@ export default function SearchScreen({ initialQueue, inFriends, popular, groups 
     return (
       <div className="sres" key={m.id}>
         <Poster movie={m} size="sm" />
-        <div className="t">
-          <b>{m.title} {m.year && <span className="yr">{m.year}</span>}</b>
-          {sub && <small>{sub}</small>}
-        </div>
+        {m.tmdbId ? (
+          <Link className="t plainlink" href={`/movie/${m.tmdbId}`}>
+            <b>{m.title} {m.year && <span className="yr">{m.year}</span>}</b>
+            {sub && <small>{sub}</small>}
+          </Link>
+        ) : (
+          <div className="t">
+            <b>{m.title} {m.year && <span className="yr">{m.year}</span>}</b>
+            {sub && <small>{sub}</small>}
+          </div>
+        )}
         {at >= 0 ? (
           <span className="pos" aria-label={`Number ${at + 1} in your queue`}>#{at + 1}</span>
         ) : (

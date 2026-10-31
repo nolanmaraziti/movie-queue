@@ -8,6 +8,8 @@ The app has four tabs along the bottom: **Queue** (home), **Nights** (movie nigh
 
 Movie nights: tap "Plan a night" on home (or "Plan one" on the Nights tab). Pick a movie club at someone's place or a theater screening, give it a name, date, time and place, and choose how the movie gets picked: guests vote on the top 3 of a queue, it's whatever is up next, or the host spins the wheel on the night. Invite friends and whole groups, then share the link with anyone else. People without an account can answer Going / Maybe / Can't go with just their name (and a phone number if they like). Signed-in guests can vote, write on the wall, and add the night to their calendar. A home address only shows to people who said they're going or maybe, and only the host sees phone numbers.
 
+Can't decide? Tap "Help me pick" on home. Answer up to eight quick questions (who's watching, what kind of movie, decade, mood, length, well known or hidden gem, rating, subtitles), or skip straight to the movies whenever you like. You get a deck of about 20 movies from TMDB that fit, best fits first, skipping ones already in your queue. Swipe right to watch, left to pass, or tap the eye if you've seen it. Alone, a right swipe is a match. Tap Invite to send friends the link: everyone who opens it swipes the same deck, and a match is a movie everyone said yes to. From a match you can add it to your queue or plan a movie night with it. Tap any card (or a search result) for the movie's profile: pictures, what it's about, who made it, why it fits your answers, friends who have it queued, and where it's streaming.
+
 Group queues are shared queues for you and your friends. From home, tap "Start a group", give it a name, then invite friends. Once they join, everyone in the group can add, move and remove movies, and each movie shows who added it. A group queue has ten slots too.
 
 ## How it fits together
@@ -19,6 +21,9 @@ app/
   friends/page.tsx      the Friends tab: share your link, requests, everyone's queues
   u/[username]/page.tsx someone's profile: their queue, groups in common, or Add friend
   profile/page.tsx      the Profile tab: your numbers, up next, your groups, log out
+  pick/page.tsx         "Help me pick": the questions
+  pick/[token]/page.tsx swiping on a deck of movies, alone or with friends
+  movie/[id]/page.tsx   a movie's profile
   nights/page.tsx       the Nights tab: upcoming, invites waiting on you, and past nights
   nights/new/page.tsx   plan a movie night
   n/[token]/page.tsx    a movie night's invitation (works for people without an account too)
@@ -31,6 +36,7 @@ app/
   api/auth/             sign up, log in, log out
   api/queue/            saves your queue to your account, or adds one movie to it
   api/search/people/    server only: searches TMDB for actors and filmmakers
+  api/pick/             build a deck from your answers; save swipes and find matches
   api/nights/           plan a night; answer, vote, pick the movie, write on the wall, cancel
   api/users/search/     finds people by username
   api/friends/          send, accept, decline and remove friends
@@ -51,6 +57,9 @@ components/
   NightRow.tsx          one night in a list, with its date block
   NightInviteCard.tsx   the "You're invited" card with Going / Maybe / Can't go
   RsvpButtons.tsx       Going / Maybe / Can't go
+  PickQuestions.tsx     the "Help me pick" questions, one at a time
+  SwipeDeck.tsx         the card stack, swiping, and the "It's a match" screen
+  MovieActions.tsx      the buttons along the bottom of a movie's profile
   AuthForm.tsx          the log in / sign up form
   FriendsPanel.tsx      the search box and lists on the Friends page
   GroupsPanel.tsx       the new-group box, invites and group list on the Groups page
@@ -68,6 +77,8 @@ lib/
   groups.ts             group queues, members and invites (server only)
   nights.ts             movie nights, RSVPs, votes and the wall (server only)
   when.ts               shows a night's date and time in the host's time zone
+  questions.ts          the "Help me pick" questions and what each answer means
+  pick.ts               turns answers into a deck of movies, and runs swipe rounds (server only)
   serverQueue.ts        reading and saving queues in the database (server only)
   queue.ts              the 10-movie limit, and the old browser-saved queue
 .env.example            template for your secret settings

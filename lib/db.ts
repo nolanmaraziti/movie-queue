@@ -120,6 +120,29 @@ const SCHEMA = `
     created_at TIMESTAMPTZ NOT NULL DEFAULT now()
   );
   CREATE INDEX IF NOT EXISTS night_posts_night_idx ON night_posts (night_id, created_at);
+  -- "Help me pick": a deck of movies built from someone's answers, swiped alone or with friends.
+  CREATE TABLE IF NOT EXISTS swipe_sessions (
+    id BIGSERIAL PRIMARY KEY,
+    token TEXT NOT NULL UNIQUE,
+    host_id BIGINT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    answers JSONB NOT NULL DEFAULT '{}',
+    deck JSONB NOT NULL DEFAULT '[]',
+    loosened BOOLEAN NOT NULL DEFAULT false,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+  );
+  CREATE TABLE IF NOT EXISTS swipe_members (
+    session_id BIGINT NOT NULL REFERENCES swipe_sessions(id) ON DELETE CASCADE,
+    user_id BIGINT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    joined_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+    PRIMARY KEY (session_id, user_id)
+  );
+  CREATE TABLE IF NOT EXISTS swipe_votes (
+    session_id BIGINT NOT NULL REFERENCES swipe_sessions(id) ON DELETE CASCADE,
+    user_id BIGINT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    movie_id TEXT NOT NULL,
+    choice TEXT NOT NULL CHECK (choice IN ('like', 'pass', 'seen')),
+    PRIMARY KEY (session_id, user_id, movie_id)
+  );
 `;
 
 function ready() {
