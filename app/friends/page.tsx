@@ -1,9 +1,9 @@
 import { redirect } from "next/navigation";
 import FriendsPanel from "@/components/FriendsPanel";
-import Nav from "@/components/Nav";
 import SetupNeeded from "@/components/SetupNeeded";
+import TabBar from "@/components/TabBar";
 import TmdbCredit from "@/components/TmdbCredit";
-import { listPeople, userIdFor } from "@/lib/friends";
+import { friendsWithQueues, listPeople, requestsWithMutuals } from "@/lib/friends";
 import { navCounts, pageUser } from "@/lib/page";
 import { getQueue } from "@/lib/serverQueue";
 
@@ -14,39 +14,28 @@ export default async function FriendsPage() {
   if (setupError) return <SetupNeeded message={setupError} />;
   if (!user) redirect("/");
 
-  const [people, mine, counts] = await Promise.all([listPeople(user.id), getQueue(user.id), navCounts(user.id)]);
-  const myIds = new Set(mine.map((m) => m.id));
-
-  // For each friend: how many movies are on both your queues.
-  const friends = await Promise.all(
-    people
-      .filter((p) => p.status === "friends")
-      .map(async (p) => {
-        const id = await userIdFor(p.username);
-        const theirs = id ? await getQueue(id) : [];
-        return {
-          username: p.username,
-          movies: theirs.map((m) => ({ ...m, both: myIds.has(m.id) })),
-          common: theirs.filter((m) => myIds.has(m.id)).length,
-        };
-      }),
-  );
-  const received = people.filter((p) => p.status === "received").map((p) => p.username);
+  const [friends, requests, people, mine, counts] = await Promise.all([
+    friendsWithQueues(user.id),
+    requestsWithMutuals(user.id),
+    listPeople(user.id),
+    getQueue(user.id),
+    navCounts(user.id),
+  ]);
   const sent = people.filter((p) => p.status === "sent").map((p) => p.username);
 
   return (
-    <div className="app">
-      <header>
-        <div className="top">
-          <h1>Your<br />Friends</h1>
-          <div className="count">{friends.length}</div>
-        </div>
-        <Nav username={user.username} {...counts} />
-      </header>
-      <main>
-        <FriendsPanel friends={friends} received={received} sent={sent} />
-      </main>
-      <TmdbCredit />
-    </div>
+    <>
+      <div className="app">
+        <FriendsPanel
+          username={user.username}
+          friends={friends}
+          requests={requests}
+          sent={sent}
+          myIds={mine.map((m) => m.id)}
+        />
+        <TmdbCredit />
+      </div>
+      <TabBar username={user.username} pending={counts.pending} />
+    </>
   );
 }

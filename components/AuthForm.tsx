@@ -6,7 +6,8 @@ import TmdbCredit from "./TmdbCredit";
 
 type Mode = "login" | "signup";
 
-export default function AuthForm() {
+// note: an extra line under the title, like who shared their profile link with you.
+export default function AuthForm({ note }: { note?: string }) {
   const [mode, setMode] = useState<Mode>("login");
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
@@ -49,7 +50,7 @@ export default function AuthForm() {
           <h1>Movie<br />Queue</h1>
         </div>
         <div className="sub">
-          <span>Your next ten movies, in order.</span>
+          <span>{note ?? "Your next ten movies, in order."}</span>
         </div>
       </header>
       <main>

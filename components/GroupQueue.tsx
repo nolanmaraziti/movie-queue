@@ -5,7 +5,9 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import type { Member } from "@/lib/groups";
 import type { Movie } from "@/lib/types";
 import { fmtRun, MAX } from "@/lib/queue";
-import Nav from "./Nav";
+import Link from "next/link";
+import { BackIcon, PlusIcon } from "./icons";
+import TabBar from "./TabBar";
 import QueueList from "./QueueList";
 import SearchSheet from "./SearchSheet";
 import TmdbCredit from "./TmdbCredit";
@@ -15,7 +17,7 @@ type Props = {
   groupId: string;
   name: string;
   username: string;
-  counts: { pending: number; invites: number };
+  pending: number;
   initialQueue: Movie[];
   members: Member[];
   invitable: string[];
@@ -25,7 +27,7 @@ type Change = { action: "add"; movie: Movie } | { action: "remove"; id: string }
 
 // A queue shared by a group. It works like your own queue, but each change is sent
 // to the server as "add this" or "move that", so everyone's changes are kept.
-export default function GroupQueue({ groupId, name, username, counts, initialQueue, members, invitable }: Props) {
+export default function GroupQueue({ groupId, name, username, pending, initialQueue, members, invitable }: Props) {
   const router = useRouter();
   const [queue, setQueue] = useState<Movie[]>(initialQueue);
   const [sheetOpen, setSheetOpen] = useState(false);
@@ -142,7 +144,7 @@ export default function GroupQueue({ groupId, name, username, counts, initialQue
   async function leave() {
     const last = members.filter((m) => m.status === "joined").length === 1;
     const ask = last ? `You're the last one in “${name}”. Leave and delete it?` : `Leave “${name}”?`;
-    if (confirm(ask) && (await act("leave", base, "DELETE"))) router.push("/groups");
+    if (confirm(ask) && (await act("leave", base, "DELETE"))) router.push("/");
   }
 
   // The wheel's "Make it up next" button: move that movie to the top of the queue.
@@ -168,6 +170,9 @@ export default function GroupQueue({ groupId, name, username, counts, initialQue
   return (
     <>
       <div className="app">
+        <div className="bar">
+          <Link className="round" href="/" aria-label="Back to your queue"><BackIcon /></Link>
+        </div>
         <header>
           <div className="top">
             <h1 className="gname">{name}</h1>
@@ -180,7 +185,6 @@ export default function GroupQueue({ groupId, name, username, counts, initialQue
             <span>{(left === 0 ? "Queue full" : `${left} ${left === 1 ? "slot" : "slots"} open`)}</span>
             <span>{total ? `${fmtRun(total)} of movies` : ""}</span>
           </div>
-          <Nav username={username} {...counts} />
         </header>
         <main className="friends">
           {n === 0 && (
@@ -231,8 +235,10 @@ export default function GroupQueue({ groupId, name, username, counts, initialQue
         aria-label={n >= MAX ? "Queue full" : "Add a movie"}
         onClick={() => setSheetOpen(true)}
       >
-        +
+        <PlusIcon size={28} />
       </button>
+
+      <TabBar username={username} pending={pending} />
 
       {sheetOpen && <SearchSheet queue={queue} onAdd={add} onClose={closeSheet} />}
       {wheelOpen && <WheelSheet queue={queue} onUpNext={upNext} onClose={closeWheel} />}

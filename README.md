@@ -4,15 +4,20 @@ Your next ten movies, in order. Search any movie on The Movie Database (TMDB), a
 
 Log in with a username and password and your queue is saved to your account, so it follows you to any device. Search for other people by username and send friend requests. Once they accept, you can see each other's queues, and movies you both have are tagged "You both".
 
-Group queues are shared queues for you and your friends. On the Groups tab, give one a name, then invite friends. Once they join, everyone in the group can add, move and remove movies, and each movie shows who added it. A group queue has ten slots too.
+The app has four tabs along the bottom: **Queue** (home), **Nights** (movie nights, coming soon), **Friends** and **Profile**. Home shows your queue, open spots you can tap to fill, group invites, your group queues, and what each friend has up next. The search button at the top searches movies, cast and crew, people to add as friends, and your groups. Tap any friend to see their profile: their queue (with a + to copy a movie into yours), and the groups you're both in. Share your profile link and anyone who opens it can add you.
+
+Group queues are shared queues for you and your friends. From home, tap "Start a group", give it a name, then invite friends. Once they join, everyone in the group can add, move and remove movies, and each movie shows who added it. A group queue has ten slots too.
 
 ## How it fits together
 
 ```
 app/
-  page.tsx              the main screen (or the log in screen if you're signed out)
-  friends/page.tsx      find people, friend requests, your friends
-  u/[username]/page.tsx a friend's queue, with "You both" tags
+  page.tsx              home: your queue, invites, groups, friends' up next (or log in if signed out)
+  search/page.tsx       search movies, cast & crew, people and your groups
+  friends/page.tsx      the Friends tab: share your link, requests, everyone's queues
+  u/[username]/page.tsx someone's profile: their queue, groups in common, or Add friend
+  profile/page.tsx      the Profile tab: your numbers, up next, your groups, log out
+  nights/page.tsx       the Nights tab (placeholder until movie nights are built)
   groups/page.tsx       start a group queue, answer invites, your groups
   groups/[id]/page.tsx  one group queue (members only)
   layout.tsx            page title and fonts
@@ -20,14 +25,21 @@ app/
   api/search/route.ts   server only: searches TMDB with your secret token
   api/movie/[id]/       server only: looks up one movie's details
   api/auth/             sign up, log in, log out
-  api/queue/            saves your queue to your account
+  api/queue/            saves your queue to your account, or adds one movie to it
+  api/search/people/    server only: searches TMDB for actors and filmmakers
   api/users/search/     finds people by username
   api/friends/          send, accept, decline and remove friends
   api/groups/           make groups, invite, join, leave, and change a group's queue
 components/
-  MovieQueue.tsx        header, queue, + button, and messages
+  MovieQueue.tsx        the home screen
+  SearchScreen.tsx      the full search screen
+  TabBar.tsx            Queue / Nights / Friends / Profile along the bottom
+  Avatar.tsx            the round letter picture for each person
+  GroupTile.tsx         a group's 2x2 poster picture, as a tile or a row
+  FriendButton.tsx      Add friend / Accept / Friends on a profile
+  AddToQueueButton.tsx  the + next to a friend's movie
+  ShareButton.tsx       shares or copies your profile link
   AuthForm.tsx          the log in / sign up form
-  Nav.tsx               My queue / Groups / Friends / Log out row
   FriendsPanel.tsx      the search box and lists on the Friends page
   GroupsPanel.tsx       the new-group box, invites and group list on the Groups page
   GroupQueue.tsx        a group's queue, members and invite buttons

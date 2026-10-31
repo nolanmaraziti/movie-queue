@@ -47,6 +47,17 @@ export async function myGroups(userId: string): Promise<GroupSummary[]> {
   return rows.map((r) => ({ id: r.id, name: r.name, members: r.members, queue: cleanQueue(r.queue) }));
 }
 
+// Groups we've both joined, for a friend's profile.
+export async function groupsInCommon(me: string, other: string): Promise<GroupSummary[]> {
+  const rows = await sql<{ id: string }>(
+    `SELECT a.group_id::text AS id FROM group_members a JOIN group_members b ON b.group_id = a.group_id
+     WHERE a.user_id = $1 AND b.user_id = $2 AND a.status = 'joined' AND b.status = 'joined'`,
+    [me, other],
+  );
+  const ids = new Set(rows.map((r) => r.id));
+  return ids.size ? (await myGroups(me)).filter((g) => ids.has(g.id)) : [];
+}
+
 // Groups I've been invited to but haven't answered yet.
 export async function myInvites(userId: string): Promise<Invite[]> {
   return sql<Invite>(

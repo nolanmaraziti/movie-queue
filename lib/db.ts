@@ -67,6 +67,9 @@ const SCHEMA = `
     PRIMARY KEY (group_id, user_id)
   );
   CREATE INDEX IF NOT EXISTS group_members_user_idx ON group_members (user_id);
+  -- When a queue last changed (Friends lists recently changed queues first), and when a friendship began.
+  ALTER TABLE users ADD COLUMN IF NOT EXISTS queue_updated_at TIMESTAMPTZ;
+  ALTER TABLE friendships ADD COLUMN IF NOT EXISTS accepted_at TIMESTAMPTZ;
 `;
 
 function ready() {

@@ -23,7 +23,7 @@ export function POST(request: Request) {
 
     const status = await statusWith(me.id, them);
     if (status === "received") {
-      await sql("UPDATE friendships SET status = 'accepted' WHERE from_id = $1 AND to_id = $2", [them, me.id]);
+      await sql("UPDATE friendships SET status = 'accepted', accepted_at = now() WHERE from_id = $1 AND to_id = $2", [them, me.id]);
     } else if (status === "none") {
       await sql(
         "INSERT INTO friendships (from_id, to_id, status) VALUES ($1, $2, 'pending') ON CONFLICT DO NOTHING",

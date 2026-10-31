@@ -2,7 +2,8 @@ import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import GroupQueue from "@/components/GroupQueue";
 import JoinButton from "@/components/JoinButton";
-import Nav from "@/components/Nav";
+import { BackIcon } from "@/components/icons";
+import TabBar from "@/components/TabBar";
 import SetupNeeded from "@/components/SetupNeeded";
 import { listPeople } from "@/lib/friends";
 import { cleanGroupId, getGroup, members, membership } from "@/lib/groups";
@@ -23,11 +24,12 @@ export default async function GroupPage({ params }: Params) {
 
   if (status !== "joined") {
     return (
+      <>
       <div className="app">
-        <header>
-          <div className="top"><h1>{status === "invited" ? group.name : "Group queue"}</h1></div>
-          <Nav username={user.username} {...counts} />
-        </header>
+        <div className="bar">
+          <Link className="round" href="/" aria-label="Back to your queue"><BackIcon /></Link>
+        </div>
+        <div className="top"><h1>{status === "invited" ? group.name : "Group queue"}</h1></div>
         <div className="empty">
           <strong>{status === "invited" ? "You're invited" : "Members only"}</strong>
           {status === "invited" ? (
@@ -43,6 +45,8 @@ export default async function GroupPage({ params }: Params) {
           )}
         </div>
       </div>
+      <TabBar username={user.username} pending={counts.pending} />
+      </>
     );
   }
 
@@ -55,7 +59,7 @@ export default async function GroupPage({ params }: Params) {
       groupId={id}
       name={group.name}
       username={user.username}
-      counts={counts}
+      pending={counts.pending}
       initialQueue={group.queue}
       members={roster}
       invitable={invitable}
