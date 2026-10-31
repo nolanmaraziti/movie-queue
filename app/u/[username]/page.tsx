@@ -6,6 +6,7 @@ import Avatar from "@/components/Avatar";
 import FriendButton from "@/components/FriendButton";
 import { GroupRow } from "@/components/GroupTile";
 import { BackIcon } from "@/components/icons";
+import NightRow from "@/components/NightRow";
 import Poster from "@/components/Poster";
 import SetupNeeded from "@/components/SetupNeeded";
 import TabBar from "@/components/TabBar";
@@ -13,6 +14,7 @@ import TmdbCredit from "@/components/TmdbCredit";
 import { cleanUsername } from "@/lib/auth";
 import { friendsSince, statusWith, userIdFor } from "@/lib/friends";
 import { groupsInCommon } from "@/lib/groups";
+import { nightsInCommon } from "@/lib/nights";
 import { navCounts, pageUser } from "@/lib/page";
 import { fmtRun, MAX } from "@/lib/queue";
 import { getQueue } from "@/lib/serverQueue";
@@ -39,9 +41,11 @@ export default async function FriendProfile({ params }: Params) {
 
   const [status, counts] = await Promise.all([statusWith(user.id, theirId), navCounts(user.id)]);
   const friends = status === "friends";
-  const [theirs, mine, since, groups] = friends
-    ? await Promise.all([getQueue(theirId), getQueue(user.id), friendsSince(user.id, theirId), groupsInCommon(user.id, theirId)])
-    : [[], [], null, []];
+  const [theirs, mine, since, groups, nights] = friends
+    ? await Promise.all([
+        getQueue(theirId), getQueue(user.id), friendsSince(user.id, theirId), groupsInCommon(user.id, theirId), nightsInCommon(user.id, theirId),
+      ])
+    : [[], [], null, [], []];
   const myIds = new Set(mine.map((m) => m.id));
   const common = theirs.filter((m) => myIds.has(m.id)).length;
   const full = mine.length >= MAX;
@@ -59,6 +63,7 @@ export default async function FriendProfile({ params }: Params) {
           {sinceText && <span className="tip">{sinceText}</span>}
           <div className="profile-actions">
             <FriendButton username={username} status={status} />
+            {friends && <Link className="pill hot" href={`/nights/new?friend=${username}`}>Invite to a night</Link>}
           </div>
         </section>
 
@@ -108,11 +113,18 @@ export default async function FriendProfile({ params }: Params) {
                 {groups.map((g) => <GroupRow key={g.id} group={g} />)}
               </section>
             )}
+
+            {nights.length > 0 && (
+              <section className="block">
+                <div className="label">Nights you&apos;re both going to</div>
+                {nights.map((n) => <NightRow key={n.token} night={n} me={user.username} />)}
+              </section>
+            )}
           </main>
         )}
         <TmdbCredit />
       </div>
-      <TabBar username={user.username} pending={counts.pending} />
+      <TabBar username={user.username} pending={counts.pending} nights={counts.nights} />
     </>
   );
 }

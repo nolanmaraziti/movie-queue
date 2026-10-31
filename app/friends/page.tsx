@@ -35,7 +35,7 @@ export default async function FriendsPage() {
         />
         <TmdbCredit />
       </div>
-      <TabBar username={user.username} pending={counts.pending} />
+      <TabBar username={user.username} pending={counts.pending} nights={counts.nights} />
     </>
   );
 }

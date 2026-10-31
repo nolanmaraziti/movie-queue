@@ -18,6 +18,7 @@ type Props = {
   name: string;
   username: string;
   pending: number;
+  nights: number;
   initialQueue: Movie[];
   members: Member[];
   invitable: string[];
@@ -27,7 +28,7 @@ type Change = { action: "add"; movie: Movie } | { action: "remove"; id: string }
 
 // A queue shared by a group. It works like your own queue, but each change is sent
 // to the server as "add this" or "move that", so everyone's changes are kept.
-export default function GroupQueue({ groupId, name, username, pending, initialQueue, members, invitable }: Props) {
+export default function GroupQueue({ groupId, name, username, pending, nights, initialQueue, members, invitable }: Props) {
   const router = useRouter();
   const [queue, setQueue] = useState<Movie[]>(initialQueue);
   const [sheetOpen, setSheetOpen] = useState(false);
@@ -195,6 +196,8 @@ export default function GroupQueue({ groupId, name, username, pending, initialQu
           )}
           {n > 0 && <QueueList queue={queue} label="Group queue" onMove={move} onRemove={remove} onSpin={() => setWheelOpen(true)} />}
 
+          <Link className="pill ghost" href={`/nights/new?group=${groupId}`}>Plan a movie night with this group</Link>
+
           <section>
             <div className="label">In this group</div>
             {joined.map((m) => (
@@ -238,7 +241,7 @@ export default function GroupQueue({ groupId, name, username, pending, initialQu
         <PlusIcon size={28} />
       </button>
 
-      <TabBar username={username} pending={pending} />
+      <TabBar username={username} pending={pending} nights={nights} />
 
       {sheetOpen && <SearchSheet queue={queue} onAdd={add} onClose={closeSheet} />}
       {wheelOpen && <WheelSheet queue={queue} onUpNext={upNext} onClose={closeWheel} />}

@@ -4,6 +4,7 @@ import { currentUser, type User } from "./auth";
 import { DbError } from "./db";
 import { pendingCount } from "./friends";
 import { inviteCount } from "./groups";
+import { pendingNightCount } from "./nights";
 
 export async function pageUser(): Promise<{ user: User | null; setupError?: string }> {
   try {
@@ -15,8 +16,8 @@ export async function pageUser(): Promise<{ user: User | null; setupError?: stri
   }
 }
 
-// The little red numbers in the nav: friend requests and group invites waiting for you.
+// The little red numbers on the tabs: friend requests, group invites and movie night invites waiting for you.
 export async function navCounts(userId: string) {
-  const [pending, invites] = await Promise.all([pendingCount(userId), inviteCount(userId)]);
-  return { pending, invites };
+  const [pending, invites, nights] = await Promise.all([pendingCount(userId), inviteCount(userId), pendingNightCount(userId)]);
+  return { pending, invites, nights };
 }

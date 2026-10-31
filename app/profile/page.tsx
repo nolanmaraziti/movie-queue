@@ -11,6 +11,7 @@ import TabBar from "@/components/TabBar";
 import TmdbCredit from "@/components/TmdbCredit";
 import { listPeople } from "@/lib/friends";
 import { myGroups } from "@/lib/groups";
+import { myNights } from "@/lib/nights";
 import { navCounts, pageUser } from "@/lib/page";
 import { MAX } from "@/lib/queue";
 import { getQueue } from "@/lib/serverQueue";
@@ -23,12 +24,14 @@ export default async function ProfilePage() {
   if (setupError) return <SetupNeeded message={setupError} />;
   if (!user) redirect("/");
 
-  const [queue, people, groups, counts] = await Promise.all([
+  const [queue, people, groups, counts, nights] = await Promise.all([
     getQueue(user.id),
     listPeople(user.id),
     myGroups(user.id),
     navCounts(user.id),
+    myNights(user.id),
   ]);
+  const nightCount = nights.past.length + nights.upcoming.filter((n) => n.rsvp === "going" || n.rsvp === "maybe").length;
   const friendCount = people.filter((p) => p.status === "friends").length;
   const next = queue[0];
 
@@ -41,7 +44,7 @@ export default async function ProfilePage() {
           <div className="stats">
             <div><span>{queue.length}</span><small>In queue</small></div>
             <Link href="/friends"><span>{friendCount}</span><small>{friendCount === 1 ? "Friend" : "Friends"}</small></Link>
-            <div><span>{groups.length}</span><small>{groups.length === 1 ? "Group" : "Groups"}</small></div>
+            <Link href="/nights"><span>{nightCount}</span><small>{nightCount === 1 ? "Movie night" : "Movie nights"}</small></Link>
           </div>
           <div className="profile-actions two">
             <ShareButton username={user.username} label="Share profile" className="pill" />
@@ -78,7 +81,7 @@ export default async function ProfilePage() {
         </main>
         <TmdbCredit />
       </div>
-      <TabBar username={user.username} pending={counts.pending} />
+      <TabBar username={user.username} pending={counts.pending} nights={counts.nights} />
     </>
   );
 }

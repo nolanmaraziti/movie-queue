@@ -5,10 +5,10 @@ import { usePathname } from "next/navigation";
 import Avatar from "./Avatar";
 import { FriendsIcon, NightsIcon, QueueIcon } from "./icons";
 
-type Props = { username: string; pending: number };
+type Props = { username: string; pending: number; nights?: number };
 
 // The bar along the bottom: Queue, Nights, Friends, Profile.
-export default function TabBar({ username, pending }: Props) {
+export default function TabBar({ username, pending, nights = 0 }: Props) {
   const path = usePathname();
   const on = (test: boolean) => (test ? "page" : undefined);
 
@@ -17,8 +17,12 @@ export default function TabBar({ username, pending }: Props) {
       <Link href="/" aria-current={on(path === "/" || path.startsWith("/groups"))}>
         <QueueIcon />Queue
       </Link>
-      <Link href="/nights" aria-current={on(path.startsWith("/nights"))}>
-        <NightsIcon />Nights
+      <Link href="/nights" aria-current={on(path.startsWith("/nights") || path.startsWith("/n/"))}>
+        <span className="tab-ico">
+          <NightsIcon />
+          {nights > 0 && <span className="badge" aria-label={`${nights} movie night invites`}>{nights}</span>}
+        </span>
+        Nights
       </Link>
       <Link href="/friends" aria-current={on(path === "/friends" || path.startsWith("/u/"))}>
         <span className="tab-ico">

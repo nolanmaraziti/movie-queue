@@ -29,7 +29,7 @@ export default async function GroupsPage() {
         </main>
         <TmdbCredit />
       </div>
-      <TabBar username={user.username} pending={counts.pending} />
+      <TabBar username={user.username} pending={counts.pending} nights={counts.nights} />
     </>
   );
 }
