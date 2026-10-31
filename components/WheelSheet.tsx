@@ -8,6 +8,8 @@ import Poster from "./Poster";
 type Props = {
   queue: Movie[];
   onUpNext: (id: string) => void;
+  // On a movie night the button picks the movie instead, so it's shown for any result.
+  actionLabel?: string;
   onClose: () => void;
 };
 
@@ -42,7 +44,7 @@ function point(deg: number, r: number) {
 // The spinning wheel. "Pick one" spins once and lands on a movie. "Knock out" removes
 // whatever it lands on and keeps going until one movie is left. Knocking movies out
 // only happens on the wheel: your actual queue isn't changed.
-export default function WheelSheet({ queue, onUpNext, onClose }: Props) {
+export default function WheelSheet({ queue, onUpNext, onClose, actionLabel }: Props) {
   const [mode, setMode] = useState<Mode>("pick");
   const [left, setLeft] = useState<Movie[]>(queue);
   const [out, setOut] = useState<Movie[]>([]);
@@ -203,7 +205,7 @@ export default function WheelSheet({ queue, onUpNext, onClose }: Props) {
                     {[result.year, fmtRun(result.runtime), result.addedBy && `added by @${result.addedBy}`].filter(Boolean).join(" · ")}
                   </div>
                   <div className="actions wheel-actions">
-                    {!isFirst && <button className="add" onClick={() => onUpNext(result.id)}>Make it up next</button>}
+                    {(actionLabel || !isFirst) && <button className="add" onClick={() => onUpNext(result.id)}>{actionLabel ?? "Make it up next"}</button>}
                     <button className="close" onClick={() => (mode === "pick" ? spin() : reset("out"))}>
                       {mode === "pick" ? "Spin again" : "Start over"}
                     </button>

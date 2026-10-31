@@ -4,7 +4,9 @@ Your next ten movies, in order. Search any movie on The Movie Database (TMDB), a
 
 Log in with a username and password and your queue is saved to your account, so it follows you to any device. Search for other people by username and send friend requests. Once they accept, you can see each other's queues, and movies you both have are tagged "You both".
 
-The app has four tabs along the bottom: **Queue** (home), **Nights** (movie nights, coming soon), **Friends** and **Profile**. Home shows your queue, open spots you can tap to fill, group invites, your group queues, and what each friend has up next. The search button at the top searches movies, cast and crew, people to add as friends, and your groups. Tap any friend to see their profile: their queue (with a + to copy a movie into yours), and the groups you're both in. Share your profile link and anyone who opens it can add you.
+The app has four tabs along the bottom: **Queue** (home), **Nights** (movie nights), **Friends** and **Profile**. Home shows your queue, open spots you can tap to fill, group invites, your group queues, and what each friend has up next. The search button at the top searches movies, cast and crew, people to add as friends, and your groups. Tap any friend to see their profile: their queue (with a + to copy a movie into yours), and the groups you're both in. Share your profile link and anyone who opens it can add you.
+
+Movie nights: tap "Plan a night" on home (or "Plan one" on the Nights tab). Pick a movie club at someone's place or a theater screening, give it a name, date, time and place, and choose how the movie gets picked: guests vote on the top 3 of a queue, it's whatever is up next, or the host spins the wheel on the night. Invite friends and whole groups, then share the link with anyone else. People without an account can answer Going / Maybe / Can't go with just their name (and a phone number if they like). Signed-in guests can vote, write on the wall, and add the night to their calendar. A home address only shows to people who said they're going or maybe, and only the host sees phone numbers.
 
 Group queues are shared queues for you and your friends. From home, tap "Start a group", give it a name, then invite friends. Once they join, everyone in the group can add, move and remove movies, and each movie shows who added it. A group queue has ten slots too.
 
@@ -17,7 +19,9 @@ app/
   friends/page.tsx      the Friends tab: share your link, requests, everyone's queues
   u/[username]/page.tsx someone's profile: their queue, groups in common, or Add friend
   profile/page.tsx      the Profile tab: your numbers, up next, your groups, log out
-  nights/page.tsx       the Nights tab (placeholder until movie nights are built)
+  nights/page.tsx       the Nights tab: upcoming, invites waiting on you, and past nights
+  nights/new/page.tsx   plan a movie night
+  n/[token]/page.tsx    a movie night's invitation (works for people without an account too)
   groups/page.tsx       start a group queue, answer invites, your groups
   groups/[id]/page.tsx  one group queue (members only)
   layout.tsx            page title and fonts
@@ -27,6 +31,7 @@ app/
   api/auth/             sign up, log in, log out
   api/queue/            saves your queue to your account, or adds one movie to it
   api/search/people/    server only: searches TMDB for actors and filmmakers
+  api/nights/           plan a night; answer, vote, pick the movie, write on the wall, cancel
   api/users/search/     finds people by username
   api/friends/          send, accept, decline and remove friends
   api/groups/           make groups, invite, join, leave, and change a group's queue
@@ -38,7 +43,14 @@ components/
   GroupTile.tsx         a group's 2x2 poster picture, as a tile or a row
   FriendButton.tsx      Add friend / Accept / Friends on a profile
   AddToQueueButton.tsx  the + next to a friend's movie
-  ShareButton.tsx       shares or copies your profile link
+  ShareButton.tsx       shares or copies a link (your profile, or a movie night)
+  PlanNight.tsx         the "New movie night" form
+  NightView.tsx         a night's page for signed-in people
+  GuestInvite.tsx       a night's page for people without an account
+  NightsList.tsx        the Upcoming / Invites / Past lists
+  NightRow.tsx          one night in a list, with its date block
+  NightInviteCard.tsx   the "You're invited" card with Going / Maybe / Can't go
+  RsvpButtons.tsx       Going / Maybe / Can't go
   AuthForm.tsx          the log in / sign up form
   FriendsPanel.tsx      the search box and lists on the Friends page
   GroupsPanel.tsx       the new-group box, invites and group list on the Groups page
@@ -54,6 +66,8 @@ lib/
   auth.ts               password hashing and staying signed in (server only)
   friends.ts            friend requests (server only)
   groups.ts             group queues, members and invites (server only)
+  nights.ts             movie nights, RSVPs, votes and the wall (server only)
+  when.ts               shows a night's date and time in the host's time zone
   serverQueue.ts        reading and saving queues in the database (server only)
   queue.ts              the 10-movie limit, and the old browser-saved queue
 .env.example            template for your secret settings

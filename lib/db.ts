@@ -70,6 +70,56 @@ const SCHEMA = `
   -- When a queue last changed (Friends lists recently changed queues first), and when a friendship began.
   ALTER TABLE users ADD COLUMN IF NOT EXISTS queue_updated_at TIMESTAMPTZ;
   ALTER TABLE friendships ADD COLUMN IF NOT EXISTS accepted_at TIMESTAMPTZ;
+  -- Movie nights. token is the random part of the invite link (/n/token).
+  -- tz is the host's time zone, so times show the way the host typed them.
+  CREATE TABLE IF NOT EXISTS nights (
+    id BIGSERIAL PRIMARY KEY,
+    token TEXT NOT NULL UNIQUE,
+    host_id BIGINT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    kind TEXT NOT NULL CHECK (kind IN ('home', 'theater')),
+    title TEXT NOT NULL,
+    note TEXT NOT NULL DEFAULT '',
+    starts_at TIMESTAMPTZ NOT NULL,
+    tz TEXT NOT NULL DEFAULT 'UTC',
+    place TEXT NOT NULL DEFAULT '',
+    address TEXT NOT NULL DEFAULT '',
+    group_id BIGINT REFERENCES group_queues(id) ON DELETE SET NULL,
+    pick_mode TEXT NOT NULL CHECK (pick_mode IN ('vote', 'upnext', 'spin')),
+    options JSONB NOT NULL DEFAULT '[]',
+    movie JSONB,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+  );
+  -- Everyone invited to a night (the host too). vote is the movie id they voted for.
+  CREATE TABLE IF NOT EXISTS night_guests (
+    night_id BIGINT NOT NULL REFERENCES nights(id) ON DELETE CASCADE,
+    user_id BIGINT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    rsvp TEXT NOT NULL DEFAULT 'pending' CHECK (rsvp IN ('pending', 'going', 'maybe', 'no')),
+    vote TEXT,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+    PRIMARY KEY (night_id, user_id)
+  );
+  CREATE INDEX IF NOT EXISTS night_guests_user_idx ON night_guests (user_id);
+  -- People who answered an invite link without an account. A cookie holds their secret
+  -- so they can change their answer; only a hash of it is kept here.
+  CREATE TABLE IF NOT EXISTS night_visitors (
+    id BIGSERIAL PRIMARY KEY,
+    night_id BIGINT NOT NULL REFERENCES nights(id) ON DELETE CASCADE,
+    secret_hash TEXT NOT NULL,
+    name TEXT NOT NULL,
+    phone TEXT NOT NULL DEFAULT '',
+    rsvp TEXT NOT NULL CHECK (rsvp IN ('going', 'maybe', 'no')),
+    created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+  );
+  CREATE INDEX IF NOT EXISTS night_visitors_night_idx ON night_visitors (night_id);
+  -- The wall: short messages on a night's page.
+  CREATE TABLE IF NOT EXISTS night_posts (
+    id BIGSERIAL PRIMARY KEY,
+    night_id BIGINT NOT NULL REFERENCES nights(id) ON DELETE CASCADE,
+    user_id BIGINT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    body TEXT NOT NULL,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+  );
+  CREATE INDEX IF NOT EXISTS night_posts_night_idx ON night_posts (night_id, created_at);
 `;
 
 function ready() {

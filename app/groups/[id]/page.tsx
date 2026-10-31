@@ -45,7 +45,7 @@ export default async function GroupPage({ params }: Params) {
           )}
         </div>
       </div>
-      <TabBar username={user.username} pending={counts.pending} />
+      <TabBar username={user.username} pending={counts.pending} nights={counts.nights} />
       </>
     );
   }
@@ -60,6 +60,7 @@ export default async function GroupPage({ params }: Params) {
       name={group.name}
       username={user.username}
       pending={counts.pending}
+      nights={counts.nights}
       initialQueue={group.queue}
       members={roster}
       invitable={invitable}

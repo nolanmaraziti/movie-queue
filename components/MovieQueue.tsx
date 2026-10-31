@@ -5,11 +5,14 @@ import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { FriendQueue } from "@/lib/friends";
 import type { GroupSummary, Invite } from "@/lib/groups";
+import type { NightCard } from "@/lib/nights";
 import type { Movie } from "@/lib/types";
 import { MAX } from "@/lib/queue";
 import Avatar from "./Avatar";
 import GroupTile from "./GroupTile";
 import { PlusIcon, SearchIcon } from "./icons";
+import NightInviteCard from "./NightInviteCard";
+import NightRow from "./NightRow";
 import Poster from "./Poster";
 import QueueList from "./QueueList";
 import SearchSheet from "./SearchSheet";
@@ -20,6 +23,9 @@ import WheelSheet from "./WheelSheet";
 type Props = {
   username: string;
   pending: number;
+  nightCount: number;
+  nightInvites: NightCard[];
+  comingUp: NightCard[];
   initialQueue: Movie[];
   groups: GroupSummary[];
   invites: Invite[];
@@ -27,7 +33,7 @@ type Props = {
 };
 
 // The home screen: your queue, group invites, your group queues, and what your friends are watching next.
-export default function MovieQueue({ username, pending, initialQueue, groups, invites, friends }: Props) {
+export default function MovieQueue({ username, pending, nightCount, nightInvites, comingUp, initialQueue, groups, invites, friends }: Props) {
   const router = useRouter();
   const [queue, setQueue] = useState<Movie[]>(initialQueue);
   const [sheetOpen, setSheetOpen] = useState(false);
@@ -166,11 +172,10 @@ export default function MovieQueue({ username, pending, initialQueue, groups, in
           </div>
         </header>
 
-        {n > 1 && (
-          <div className="actions-row">
-            <button className="pill ghost" onClick={() => setWheelOpen(true)}>Spin the wheel</button>
-          </div>
-        )}
+        <div className="actions-row">
+          <Link className="pill" href="/nights/new">Plan a night</Link>
+          {n > 1 && <button className="pill ghost" onClick={() => setWheelOpen(true)}>Spin</button>}
+        </div>
 
         <main className="home">
           {n === 0 ? (
@@ -189,6 +194,18 @@ export default function MovieQueue({ username, pending, initialQueue, groups, in
                 </button>
               ))}
             </div>
+          )}
+
+          {nightInvites.map((night) => <NightInviteCard key={night.token} night={night} />)}
+
+          {comingUp.length > 0 && (
+            <section className="block">
+              <div className="list-head">
+                <div className="label">Coming up</div>
+                <Link className="link plain small" href="/nights">All nights</Link>
+              </div>
+              {comingUp.map((night) => <NightRow key={night.token} night={night} me={username} />)}
+            </section>
           )}
 
           {invites.map((g) => (
@@ -253,7 +270,7 @@ export default function MovieQueue({ username, pending, initialQueue, groups, in
         <PlusIcon size={28} />
       </button>
 
-      <TabBar username={username} pending={pending} />
+      <TabBar username={username} pending={pending} nights={nightCount} />
 
       {sheetOpen && <SearchSheet queue={queue} onAdd={add} onClose={closeSheet} />}
       {wheelOpen && <WheelSheet queue={queue} onUpNext={upNext} onClose={closeWheel} />}
