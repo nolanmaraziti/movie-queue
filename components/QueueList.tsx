@@ -104,13 +104,15 @@ export default function QueueList({ queue, label = "Your queue", onMove, onRemov
   }
 
   return (
-    <section style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+    <section className="qlist">
       <div className="list-head">
         <div className="label">{label}</div>
-        {onSpin && queue.length > 1 && (
+        {onSpin && queue.length > 1 ? (
           <button className="spin" onClick={onSpin}>
             {wheel} Spin the wheel
           </button>
+        ) : (
+          queue.length > 1 && <span className="tip">Drag ≡ to reorder</span>
         )}
       </div>
       <ol
@@ -123,9 +125,6 @@ export default function QueueList({ queue, label = "Your queue", onMove, onRemov
       >
         {queue.map((m, i) => (
           <li key={`${version}-${m.id}`} className={`row${i === 0 ? " first" : ""}`} data-i={i}>
-            <button className="handle" data-i={i} aria-label={`Move ${m.title}. Use the up and down arrow keys.`}>
-              {grip}
-            </button>
             <span className="num">{i + 1}</span>
             <Poster movie={m} size="sm" />
             <div className="t">
@@ -136,10 +135,12 @@ export default function QueueList({ queue, label = "Your queue", onMove, onRemov
             <button className="x" onClick={() => onRemove(m.id)} aria-label={`Remove ${m.title}`}>
               ×
             </button>
+            <button className="handle" data-i={i} aria-label={`Move ${m.title}. Use the up and down arrow keys.`}>
+              {grip}
+            </button>
           </li>
         ))}
       </ol>
-      {queue.length > 1 && <div className="tip">Drag the handle on the left to change the order.</div>}
     </section>
   );
 }

@@ -1,6 +1,6 @@
 // Reading and saving a person's queue in the database. Server only.
 import "server-only";
-import { sql } from "./db";
+import { sql, transaction } from "./db";
 import { MAX } from "./queue";
 import type { Movie } from "./types";
 
@@ -39,7 +39,24 @@ export async function getQueue(userId: string): Promise<Movie[]> {
 }
 
 export async function setQueue(userId: string, queue: Movie[]) {
-  await sql("UPDATE users SET queue = $2 WHERE id = $1", [userId, JSON.stringify(queue)]);
+  await sql(
+    "UPDATE users SET queue = $2, queue_updated_at = now() WHERE id = $1 AND queue IS DISTINCT FROM $2::jsonb",
+    [userId, JSON.stringify(queue)],
+  );
+}
+
+// Adds one movie to the end of your queue (from Search or a friend's profile).
+// Your row is locked while we do it, so it can't clash with a save from another tab.
+export async function addToQueue(userId: string, movie: Movie): Promise<{ queue: Movie[]; error?: string }> {
+  return transaction(async (q) => {
+    const rows = await q<{ queue: unknown }>("SELECT queue FROM users WHERE id = $1 FOR UPDATE", [userId]);
+    const queue = cleanQueue(rows[0]?.queue);
+    if (queue.some((m) => m.id === movie.id)) return { queue, error: "That movie is already in your queue." };
+    if (queue.length >= MAX) return { queue, error: "Your queue is full. Remove a movie to make room." };
+    const next = [...queue, movie];
+    await q("UPDATE users SET queue = $2, queue_updated_at = now() WHERE id = $1", [userId, JSON.stringify(next)]);
+    return { queue: next };
+  });
 }
 
 // Logging in on a browser that already had movies saved: keep the account's

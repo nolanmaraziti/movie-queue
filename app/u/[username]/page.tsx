@@ -1,11 +1,18 @@
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
-import Nav from "@/components/Nav";
+import AddToQueueButton from "@/components/AddToQueueButton";
+import AuthForm from "@/components/AuthForm";
+import Avatar from "@/components/Avatar";
+import FriendButton from "@/components/FriendButton";
+import { GroupRow } from "@/components/GroupTile";
+import { BackIcon } from "@/components/icons";
 import Poster from "@/components/Poster";
 import SetupNeeded from "@/components/SetupNeeded";
+import TabBar from "@/components/TabBar";
 import TmdbCredit from "@/components/TmdbCredit";
 import { cleanUsername } from "@/lib/auth";
-import { statusWith, userIdFor } from "@/lib/friends";
+import { friendsSince, statusWith, userIdFor } from "@/lib/friends";
+import { groupsInCommon } from "@/lib/groups";
 import { navCounts, pageUser } from "@/lib/page";
 import { fmtRun, MAX } from "@/lib/queue";
 import { getQueue } from "@/lib/serverQueue";
@@ -17,82 +24,95 @@ export async function generateMetadata({ params }: Params) {
   return { title: `@${decodeURIComponent(username)} · Movie Queue` };
 }
 
-// A friend's queue, read only. Movies that are on your queue too get a "You both" tag.
-export default async function FriendQueue({ params }: Params) {
-  const { user, setupError } = await pageUser();
-  if (setupError) return <SetupNeeded message={setupError} />;
-  if (!user) redirect("/");
-
+// Someone's profile. Friends see their queue (with "You both" tags), and the groups you share.
+// Anyone else sees an Add friend button, which is what a shared profile link is for.
+export default async function FriendProfile({ params }: Params) {
   const username = cleanUsername(decodeURIComponent((await params).username));
   if (!username) notFound();
-  if (username === user.username) redirect("/");
+
+  const { user, setupError } = await pageUser();
+  if (setupError) return <SetupNeeded message={setupError} />;
+  if (!user) return <AuthForm note={`Log in or sign up to add @${username} as a friend.`} />;
+  if (username === user.username) redirect("/profile");
   const theirId = await userIdFor(username);
   if (!theirId) notFound();
 
   const [status, counts] = await Promise.all([statusWith(user.id, theirId), navCounts(user.id)]);
-  const header = (count?: number, note?: string) => (
-    <header>
-      <div className="top">
-        <h1>@{username}</h1>
-        {count !== undefined && <div className="count">{count}<span>/{MAX}</span></div>}
-      </div>
-      {count !== undefined && (
-        <div className="meter" aria-hidden="true">
-          {Array.from({ length: MAX }, (_, i) => <i key={i} className={i < count ? "on" : ""} />)}
-        </div>
-      )}
-      {note && <div className="sub"><span>{note}</span></div>}
-      <Nav username={user.username} {...counts} />
-    </header>
-  );
-
-  if (status !== "friends") {
-    return (
-      <div className="app">
-        {header()}
-        <div className="empty">
-          <strong>Friends only</strong>
-          <span>You can see @{username}&apos;s queue once you&apos;re friends.</span>
-          <Link className="add" href="/friends">Go to Friends</Link>
-        </div>
-      </div>
-    );
-  }
-
-  const [theirs, mine] = await Promise.all([getQueue(theirId), getQueue(user.id)]);
+  const friends = status === "friends";
+  const [theirs, mine, since, groups] = friends
+    ? await Promise.all([getQueue(theirId), getQueue(user.id), friendsSince(user.id, theirId), groupsInCommon(user.id, theirId)])
+    : [[], [], null, []];
   const myIds = new Set(mine.map((m) => m.id));
   const common = theirs.filter((m) => myIds.has(m.id)).length;
+  const full = mine.length >= MAX;
+  const sinceText = since ? `Friends since ${new Date(since).toLocaleDateString("en-US", { month: "long", year: "numeric" })}` : "";
 
   return (
-    <div className="app">
-      {header(theirs.length, common ? `${common} ${common === 1 ? "movie" : "movies"} in common` : "No movies in common yet")}
-      <main>
-        {theirs.length === 0 ? (
-          <div className="empty">
-            <strong>Nothing queued</strong>
-            <span>@{username} hasn&apos;t added any movies yet.</span>
+    <>
+      <div className="app">
+        <div className="bar">
+          <Link className="round" href="/friends" aria-label="Back to friends"><BackIcon /></Link>
+        </div>
+        <section className="profile-head">
+          <Avatar username={username} size={96} />
+          <h1>@{username}</h1>
+          {sinceText && <span className="tip">{sinceText}</span>}
+          <div className="profile-actions">
+            <FriendButton username={username} status={status} />
           </div>
-        ) : (
-          <section style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-            <div className="label">Their queue</div>
-            <ol>
-              {theirs.map((m, i) => (
-                <li key={m.id} className={`row ro${i === 0 ? " first" : ""}`}>
-                  <span className="num">{i + 1}</span>
-                  <Poster movie={m} size="sm" />
-                  <div className="t">
-                    {i === 0 && <span className="chip">Up next</span>}
-                    {myIds.has(m.id) && <span className="chip both">You both</span>}
-                    <b>{m.title}</b>
-                    <small>{[m.year, fmtRun(m.runtime)].filter(Boolean).join(" · ")}</small>
-                  </div>
-                </li>
-              ))}
-            </ol>
-          </section>
+        </section>
+
+        {!friends && (
+          <div className="empty">
+            <strong>Friends only</strong>
+            <span>
+              {status === "received"
+                ? `@${username} wants to be friends. Accept to see each other's queues.`
+                : status === "sent"
+                  ? `You'll see @${username}'s queue once they accept.`
+                  : `Add @${username} as a friend to see each other's queues.`}
+            </span>
+          </div>
         )}
-      </main>
-      <TmdbCredit />
-    </div>
+
+        {friends && (
+          <main className="home">
+            <section className="qlist">
+              <div className="list-head">
+                <div className="label">@{username}&apos;s queue · {theirs.length} of {MAX}</div>
+                {common > 0 && <span className="tip">{common} also in yours</span>}
+              </div>
+              {theirs.length === 0 ? (
+                <div className="hint">@{username} hasn&apos;t added any movies yet.</div>
+              ) : (
+                <ol>
+                  {theirs.map((m, i) => (
+                    <li key={m.id} className={`row ro${i === 0 ? " first" : ""}`}>
+                      <span className="num">{i + 1}</span>
+                      <Poster movie={m} size="sm" />
+                      <div className="t">
+                        {i === 0 && <span className="chip">Up next</span>}
+                        <b>{m.title}</b>
+                        <small>{[m.year, fmtRun(m.runtime)].filter(Boolean).join(" · ")}</small>
+                      </div>
+                      {myIds.has(m.id) ? <span className="chip both">You both</span> : <AddToQueueButton movie={m} full={full} />}
+                    </li>
+                  ))}
+                </ol>
+              )}
+            </section>
+
+            {groups.length > 0 && (
+              <section className="block">
+                <div className="label">Groups you&apos;re both in</div>
+                {groups.map((g) => <GroupRow key={g.id} group={g} />)}
+              </section>
+            )}
+          </main>
+        )}
+        <TmdbCredit />
+      </div>
+      <TabBar username={user.username} pending={counts.pending} />
+    </>
   );
 }

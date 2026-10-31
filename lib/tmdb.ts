@@ -60,3 +60,26 @@ export async function searchMovies(query: string, limit = 10): Promise<Movie[]> 
   const top = data.results.slice(0, limit);
   return Promise.all(top.map((m) => getMovie(m.id).catch(() => toMovie(m))));
 }
+
+export type CastCrew = { id: number; name: string; job: string; movies: Movie[] };
+
+type TmdbPerson = {
+  id: number;
+  name: string;
+  known_for_department?: string;
+  known_for?: (TmdbMovie & { media_type?: string })[];
+};
+
+// Search for actors and filmmakers. Each comes with the movies they're best known for.
+export async function searchPeople(query: string, limit = 6): Promise<CastCrew[]> {
+  const data = await tmdb<{ results: TmdbPerson[] }>("/search/person", { query, include_adult: "false" });
+  return data.results
+    .slice(0, limit)
+    .map((p) => ({
+      id: p.id,
+      name: p.name,
+      job: p.known_for_department === "Acting" ? "Actor" : p.known_for_department === "Directing" ? "Director" : (p.known_for_department ?? ""),
+      movies: (p.known_for ?? []).filter((m) => m.media_type === "movie" && m.title).map(toMovie),
+    }))
+    .filter((p) => p.movies.length > 0);
+}

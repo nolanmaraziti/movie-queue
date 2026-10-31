@@ -1,21 +1,40 @@
 "use client";
 
+import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useRef, useState } from "react";
+import type { FriendQueue } from "@/lib/friends";
+import type { GroupSummary, Invite } from "@/lib/groups";
 import type { Movie } from "@/lib/types";
-import { fmtRun, MAX } from "@/lib/queue";
-import Nav from "./Nav";
+import { MAX } from "@/lib/queue";
+import Avatar from "./Avatar";
+import GroupTile from "./GroupTile";
+import { PlusIcon, SearchIcon } from "./icons";
+import Poster from "./Poster";
 import QueueList from "./QueueList";
 import SearchSheet from "./SearchSheet";
+import TabBar from "./TabBar";
 import TmdbCredit from "./TmdbCredit";
 import WheelSheet from "./WheelSheet";
 
-type Props = { username: string; initialQueue: Movie[]; counts: { pending: number; invites: number } };
+type Props = {
+  username: string;
+  pending: number;
+  initialQueue: Movie[];
+  groups: GroupSummary[];
+  invites: Invite[];
+  friends: FriendQueue[];
+};
 
-export default function MovieQueue({ username, initialQueue, counts }: Props) {
+// The home screen: your queue, group invites, your group queues, and what your friends are watching next.
+export default function MovieQueue({ username, pending, initialQueue, groups, invites, friends }: Props) {
+  const router = useRouter();
   const [queue, setQueue] = useState<Movie[]>(initialQueue);
   const [sheetOpen, setSheetOpen] = useState(false);
   const [wheelOpen, setWheelOpen] = useState(false);
   const [toastMsg, setToastMsg] = useState("");
+  const [today, setToday] = useState("");
+  const [busy, setBusy] = useState("");
   const toastTimer = useRef<ReturnType<typeof setTimeout>>(undefined);
   const fabRef = useRef<HTMLButtonElement>(null);
   const saving = useRef<Promise<unknown>>(Promise.resolve());
@@ -44,6 +63,9 @@ export default function MovieQueue({ username, initialQueue, counts }: Props) {
   }
 
   useEffect(() => {
+    // The date in your own time zone, like "Saturday, Oct 31".
+    setToday(new Date().toLocaleDateString("en-US", { weekday: "long", month: "short", day: "numeric" }));
+
     // Fill in posters for TMDB movies saved without one (like the starter picks).
     for (const m of initialQueue) {
       if (!m.tmdbId || m.posterPath !== undefined) continue;
@@ -97,6 +119,20 @@ export default function MovieQueue({ username, initialQueue, counts }: Props) {
     setWheelOpen(false);
   }
 
+  // Join or decline a group invite, right from the home screen.
+  async function answer(id: string, method: "POST" | "DELETE") {
+    setBusy(id);
+    const res = await fetch(`/api/groups/${id}`, { method }).catch(() => null);
+    if (res?.status === 401) return window.location.reload();
+    if (!res?.ok) {
+      toast("That didn't work. Try again.");
+      return setBusy("");
+    }
+    if (method === "POST") return router.push(`/groups/${id}`);
+    router.refresh();
+    setBusy("");
+  }
+
   const closeWheel = useCallback(() => setWheelOpen(false), []);
 
   const closeSheet = useCallback(() => {
@@ -106,33 +142,104 @@ export default function MovieQueue({ username, initialQueue, counts }: Props) {
 
   const n = queue.length;
   const left = MAX - n;
-  const total = queue.reduce((a, m) => a + (m.runtime || 0), 0);
+  const upNextFriends = friends.filter((f) => f.queue.length > 0);
 
   return (
     <>
       <div className="app">
         <header>
           <div className="top">
-            <h1>Movie<br />Queue</h1>
-            <div className="count">{n}<span>/{MAX}</span></div>
+            <div className="titles">
+              <span className="label" suppressHydrationWarning>{today || " "}</span>
+              <h1>Your queue</h1>
+            </div>
+            <Link className="round" href="/search" aria-label="Search movies and friends">
+              <SearchIcon />
+            </Link>
           </div>
           <div className="meter" aria-hidden="true">
             {Array.from({ length: MAX }, (_, i) => <i key={i} className={i < n ? "on" : ""} />)}
           </div>
           <div className="sub">
-            <span>{(left === 0 ? "Queue full" : `${left} ${left === 1 ? "slot" : "slots"} open`)}</span>
-            <span>{total ? `${fmtRun(total)} of movies` : ""}</span>
+            <span>{n} of {MAX} spots used</span>
+            <span>{left === 0 ? "Full" : `${left} open`}</span>
           </div>
-          <Nav username={username} {...counts} />
         </header>
-        <main>
-          {n === 0 && (
+
+        {n > 1 && (
+          <div className="actions-row">
+            <button className="pill ghost" onClick={() => setWheelOpen(true)}>Spin the wheel</button>
+          </div>
+        )}
+
+        <main className="home">
+          {n === 0 ? (
             <div className="empty">
               <strong>Nothing queued</strong>
-              <span>Tap + to search for a movie and add it. You get ten slots.</span>
+              <span>Tap + or an open spot to add a movie. You get ten spots.</span>
+            </div>
+          ) : (
+            <QueueList queue={queue} onMove={move} onRemove={remove} />
+          )}
+          {left > 0 && (
+            <div className="spots">
+              {Array.from({ length: left }, (_, i) => (
+                <button key={i} className="spot" onClick={() => setSheetOpen(true)} aria-label={`Add a movie to spot ${n + i + 1}`}>
+                  Spot {n + i + 1}
+                </button>
+              ))}
             </div>
           )}
-          {n > 0 && <QueueList queue={queue} onMove={move} onRemove={remove} onSpin={() => setWheelOpen(true)} />}
+
+          {invites.map((g) => (
+            <section className="invite-card" key={g.id}>
+              <div className="invite-top">
+                <span className="tag">You&apos;re invited</span>
+                {g.invitedBy && <span className="from">from @{g.invitedBy}</span>}
+              </div>
+              <div>
+                <h2>{g.name}</h2>
+                <small>
+                  Group queue · {g.members.length} {g.members.length === 1 ? "member" : "members"}
+                  {g.members.length > 0 && ` · ${g.members.slice(0, 3).map((m) => `@${m}`).join(", ")}${g.members.length > 3 ? "…" : ""}`}
+                </small>
+              </div>
+              <div className="two">
+                <button className="pill" disabled={busy === g.id} onClick={() => answer(g.id, "POST")}>Join</button>
+                <button className="pill ghost" disabled={busy === g.id} onClick={() => answer(g.id, "DELETE")}>No thanks</button>
+              </div>
+            </section>
+          ))}
+
+          <section className="block">
+            <h2 className="h2">Group queues</h2>
+            <div className="gtiles">
+              {groups.map((g) => <GroupTile key={g.id} group={g} />)}
+              <Link className="gtile" href="/groups">
+                <span className="mosaic new" aria-hidden="true"><PlusIcon size={30} />New group</span>
+                <b className="muted">Start a group</b>
+                <small>Invite friends to share</small>
+              </Link>
+            </div>
+          </section>
+
+          {upNextFriends.length > 0 && (
+            <section className="block">
+              <div className="label">Friends&apos; up next</div>
+              <div className="fnext">
+                {upNextFriends.map((f) => (
+                  <Link key={f.username} href={`/u/${f.username}`} className="fnext-item">
+                    <span className="fnext-pic">
+                      <Avatar username={f.username} size={64} />
+                      <span className="fnext-poster"><Poster movie={f.queue[0]} size="xs" /></span>
+                    </span>
+                    <b>@{f.username}</b>
+                    <small>{f.queue[0].title}</small>
+                  </Link>
+                ))}
+              </div>
+            </section>
+          )}
         </main>
         <TmdbCredit />
       </div>
@@ -143,8 +250,10 @@ export default function MovieQueue({ username, initialQueue, counts }: Props) {
         aria-label={n >= MAX ? "Queue full" : "Add a movie"}
         onClick={() => setSheetOpen(true)}
       >
-        +
+        <PlusIcon size={28} />
       </button>
+
+      <TabBar username={username} pending={pending} />
 
       {sheetOpen && <SearchSheet queue={queue} onAdd={add} onClose={closeSheet} />}
       {wheelOpen && <WheelSheet queue={queue} onUpNext={upNext} onClose={closeWheel} />}
